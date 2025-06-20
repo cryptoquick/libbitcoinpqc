@@ -13,7 +13,7 @@ fuzz_target!(|data: &[u8]| {
     let key_data = &data[0..128];
 
     // Generate two keypairs with different algorithms
-    let alg1 = Algorithm::FN_DSA_512;
+    let alg1 = Algorithm::SECP256K1_SCHNORR;
     let alg2 = Algorithm::ML_DSA_44;
 
     let keypair1 = match generate_keypair(alg1, key_data) {

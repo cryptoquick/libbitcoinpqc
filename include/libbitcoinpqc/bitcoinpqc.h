@@ -6,7 +6,6 @@
  * signature algorithms for use with BIP-360 and the Bitcoin QuBit soft fork:
  * - ML-DSA-44 (CRYSTALS-Dilithium)
  * - SLH-DSA-Shake-128s (SPHINCS+)
- * - FN-DSA-512 (FALCON)
  */
 
 #ifndef BITCOIN_PQC_H
@@ -22,9 +21,8 @@ extern "C" {
 /* Algorithm identifiers */
 typedef enum {
     BITCOIN_PQC_SECP256K1_SCHNORR = 0,  /* BIP-340 Schnorr + X-Only */
-    BITCOIN_PQC_FN_DSA_512 = 1,         /* FIPS 206 - FALCON-512 */
-    BITCOIN_PQC_ML_DSA_44 = 2,          /* FIPS 204 - CRYSTALS-Dilithium Level I */
-    BITCOIN_PQC_SLH_DSA_SHAKE_128S = 3  /* FIPS 205 - SPHINCS+-128s */
+    BITCOIN_PQC_ML_DSA_44 = 1,          /* FIPS 204 - CRYSTALS-Dilithium Level I */
+    BITCOIN_PQC_SLH_DSA_SHAKE_128S = 2  /* FIPS 205 - SPHINCS+-128s */
 } bitcoin_pqc_algorithm_t;
 
 /* Common error codes */
@@ -155,7 +153,6 @@ bitcoin_pqc_error_t bitcoin_pqc_verify(
 /* Algorithm-specific header includes */
 #include "ml_dsa.h"
 #include "slh_dsa.h"
-#include "fn_dsa.h"
 
 #ifdef __cplusplus
 }

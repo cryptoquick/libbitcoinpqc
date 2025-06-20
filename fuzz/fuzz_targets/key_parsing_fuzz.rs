@@ -3,7 +3,7 @@
 use bitcoinpqc::{algorithm_from_index, PublicKey, SecretKey};
 use libfuzzer_sys::fuzz_target;
 
-const NUM_ALGORITHMS: u8 = 4; // SECP256K1_SCHNORR, FN_DSA_512, ML_DSA_44, SLH_DSA_128S
+const NUM_ALGORITHMS: u8 = 3; // SECP256K1_SCHNORR, ML_DSA_44, SLH_DSA_128S
 
 fuzz_target!(|data: &[u8]| {
     if data.len() < 2 {

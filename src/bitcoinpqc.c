@@ -4,7 +4,6 @@
 #include "libbitcoinpqc/bitcoinpqc.h"
 #include "libbitcoinpqc/ml_dsa.h"
 #include "libbitcoinpqc/slh_dsa.h"
-#include "libbitcoinpqc/fn_dsa.h"
 
 // Debug mode flag - set to 0 to disable debug output
 #define BITCOIN_PQC_DEBUG 0
@@ -21,8 +20,6 @@ size_t bitcoin_pqc_public_key_size(bitcoin_pqc_algorithm_t algorithm) {
             return ML_DSA_44_PUBLIC_KEY_SIZE;
         case BITCOIN_PQC_SLH_DSA_SHAKE_128S:
             return SLH_DSA_SHAKE_128S_PUBLIC_KEY_SIZE;
-        case BITCOIN_PQC_FN_DSA_512:
-            return FN_DSA_512_PUBLIC_KEY_SIZE;
         default:
             return 0;
     }
@@ -36,8 +33,6 @@ size_t bitcoin_pqc_secret_key_size(bitcoin_pqc_algorithm_t algorithm) {
             return ML_DSA_44_SECRET_KEY_SIZE;
         case BITCOIN_PQC_SLH_DSA_SHAKE_128S:
             return SLH_DSA_SHAKE_128S_SECRET_KEY_SIZE;
-        case BITCOIN_PQC_FN_DSA_512:
-            return FN_DSA_512_SECRET_KEY_SIZE;
         default:
             return 0;
     }
@@ -51,8 +46,6 @@ size_t bitcoin_pqc_signature_size(bitcoin_pqc_algorithm_t algorithm) {
             return ML_DSA_44_SIGNATURE_SIZE;
         case BITCOIN_PQC_SLH_DSA_SHAKE_128S:
             return SLH_DSA_SHAKE_128S_SIGNATURE_SIZE;
-        case BITCOIN_PQC_FN_DSA_512:
-            return FN_DSA_512_SIG_MAX_SIZE; // Use max size for buffer allocation
         default:
             return 0;
     }
@@ -102,9 +95,6 @@ bitcoin_pqc_error_t bitcoin_pqc_keygen(
             break;
         case BITCOIN_PQC_SLH_DSA_SHAKE_128S:
             result = slh_dsa_shake_128s_keygen(pk, sk, random_data, random_data_size);
-            break;
-        case BITCOIN_PQC_FN_DSA_512:
-            result = fn_dsa_512_keygen(pk, sk, random_data, random_data_size);
             break;
         default:
             free(pk);
@@ -207,11 +197,6 @@ bitcoin_pqc_error_t bitcoin_pqc_sign(
             result = slh_dsa_shake_128s_sign(sig, &actual_sig_len, message, message_size,
                                            secret_key);
             break;
-        case BITCOIN_PQC_FN_DSA_512:
-            DEBUG_PRINT("bitcoin_pqc_sign: Calling fn_dsa_512_sign\n");
-            result = fn_dsa_512_sign(sig, &actual_sig_len, message, message_size,
-                                   secret_key);
-            break;
         default:
             free(sig);
             DEBUG_PRINT("bitcoin_pqc_sign: Unsupported algorithm %d\n", algorithm);
@@ -277,17 +262,10 @@ bitcoin_pqc_error_t bitcoin_pqc_verify(
 
     // Get expected signature size
     size_t expected_sig_size = bitcoin_pqc_signature_size(algorithm);
-    if (algorithm != BITCOIN_PQC_FN_DSA_512 && signature_size != expected_sig_size) {
-        // For FALCON, signature size can vary but must be <= max size
-        if (algorithm == BITCOIN_PQC_FN_DSA_512 && signature_size > expected_sig_size) {
-            DEBUG_PRINT("bitcoin_pqc_verify: Bad signature size for FALCON. Max %zu, got %zu\n",
-                   expected_sig_size, signature_size);
-            return BITCOIN_PQC_ERROR_BAD_SIGNATURE;
-        } else if (algorithm != BITCOIN_PQC_FN_DSA_512) {
-            DEBUG_PRINT("bitcoin_pqc_verify: Bad signature size. Expected %zu, got %zu\n",
-                   expected_sig_size, signature_size);
-            return BITCOIN_PQC_ERROR_BAD_SIGNATURE;
-        }
+    if (signature_size != expected_sig_size) {
+      DEBUG_PRINT("bitcoin_pqc_verify: Bad signature size. Expected %zu, got %zu\n",
+                  expected_sig_size, signature_size);
+      return BITCOIN_PQC_ERROR_BAD_SIGNATURE;
     }
 
     int result;
@@ -305,10 +283,6 @@ bitcoin_pqc_error_t bitcoin_pqc_verify(
         case BITCOIN_PQC_SLH_DSA_SHAKE_128S:
             DEBUG_PRINT("bitcoin_pqc_verify: Calling slh_dsa_shake_128s_verify\n");
             result = slh_dsa_shake_128s_verify(signature, signature_size, message, message_size, public_key);
-            break;
-        case BITCOIN_PQC_FN_DSA_512:
-            DEBUG_PRINT("bitcoin_pqc_verify: Calling fn_dsa_512_verify\n");
-            result = fn_dsa_512_verify(signature, signature_size, message, message_size, public_key);
             break;
         default:
             DEBUG_PRINT("bitcoin_pqc_verify: Unsupported algorithm %d\n", algorithm);

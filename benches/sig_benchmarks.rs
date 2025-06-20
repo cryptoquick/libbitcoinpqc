@@ -146,79 +146,6 @@ fn bench_slh_dsa_128s_verification(c: &mut Criterion) {
     group.finish();
 }
 
-// FN-DSA-512 BENCHMARKS
-
-fn bench_fn_dsa_512_keygen(c: &mut Criterion) {
-    let mut group = c.benchmark_group("fn_dsa_keygen");
-    configure_group(&mut group);
-
-    group.bench_function("FN_DSA_512", |b| {
-        b.iter(|| {
-            let random_data = get_random_data(256);
-            generate_keypair(Algorithm::FN_DSA_512, &random_data).unwrap()
-        });
-    });
-
-    group.finish();
-}
-
-fn bench_fn_dsa_512_signing(c: &mut Criterion) {
-    let mut group = c.benchmark_group("fn_dsa_signing");
-    configure_group(&mut group);
-
-    let message = b"This is a test message for benchmarking";
-    let random_data = get_random_data(256);
-    let fn_keypair = generate_keypair(Algorithm::FN_DSA_512, &random_data).unwrap();
-
-    // Only print debug info if DEBUG_MODE is true
-    if DEBUG_MODE {
-        println!("FN-DSA-512 Keypair created for benchmarking:");
-        println!(
-            "Public key size: {}, Secret key size: {}",
-            fn_keypair.public_key.bytes.len(),
-            fn_keypair.secret_key.bytes.len()
-        );
-        println!(
-            "Secret key first bytes: {:02x?}",
-            &fn_keypair.secret_key.bytes[..8.min(fn_keypair.secret_key.bytes.len())]
-        );
-
-        // Verify we can sign once before benchmarking
-        let test_sig = sign(&fn_keypair.secret_key, message).unwrap();
-        println!("Test signature size: {}", test_sig.bytes.len());
-        println!(
-            "Test signature first bytes: {:02x?}",
-            &test_sig.bytes[..8.min(test_sig.bytes.len())]
-        );
-    } else {
-        // Generate a test signature without debug output
-        sign(&fn_keypair.secret_key, message).unwrap();
-    }
-
-    // Now benchmark
-    group.bench_function("FN_DSA_512", |b| {
-        b.iter(|| sign(&fn_keypair.secret_key, message));
-    });
-
-    group.finish();
-}
-
-fn bench_fn_dsa_512_verification(c: &mut Criterion) {
-    let mut group = c.benchmark_group("fn_dsa_verification");
-    configure_group(&mut group);
-
-    let message = b"This is a test message for benchmarking";
-    let random_data = get_random_data(256);
-    let fn_keypair = generate_keypair(Algorithm::FN_DSA_512, &random_data).unwrap();
-    let fn_sig = sign(&fn_keypair.secret_key, message).unwrap();
-
-    group.bench_function("FN_DSA_512", |b| {
-        b.iter(|| verify(&fn_keypair.public_key, message, &fn_sig).unwrap());
-    });
-
-    group.finish();
-}
-
 // SIZE REPORTING - Combined in one benchmark
 
 fn bench_sizes(c: &mut Criterion) {
@@ -256,21 +183,6 @@ fn bench_sizes(c: &mut Criterion) {
     store_size_result("slh_dsa_128s_sig", slh_sig_size);
     store_size_result("slh_dsa_128s_pk_sig", slh_pk_sig_size);
 
-    // FN-DSA-512
-    let random_data = get_random_data(256);
-    let fn_keypair = generate_keypair(Algorithm::FN_DSA_512, &random_data).unwrap();
-    let fn_sig = sign(&fn_keypair.secret_key, message).unwrap();
-    let fn_pk_size = fn_keypair.public_key.bytes.len();
-    let fn_sk_size = fn_keypair.secret_key.bytes.len();
-    let fn_sig_size = fn_sig.bytes.len();
-    let fn_pk_sig_size = fn_pk_size + fn_sig_size;
-
-    // Store size results
-    store_size_result("fn_dsa_512_pubkey", fn_pk_size);
-    store_size_result("fn_dsa_512_seckey", fn_sk_size);
-    store_size_result("fn_dsa_512_sig", fn_sig_size);
-    store_size_result("fn_dsa_512_pk_sig", fn_pk_sig_size);
-
     // Print key and signature sizes
     debug_println!("Key and Signature Sizes (bytes):");
     debug_println!("ML-DSA-44:");
@@ -287,14 +199,6 @@ fn bench_sizes(c: &mut Criterion) {
         slh_pk_size,
         slh_sk_size,
         slh_sig_size
-    );
-
-    debug_println!("FN-DSA-512:");
-    debug_println!(
-        "  Public key: {}, Secret key: {}, Signature: {}",
-        fn_pk_size,
-        fn_sk_size,
-        fn_sig_size
     );
 
     group.finish();
@@ -411,19 +315,6 @@ fn generate_report(_c: &mut Criterion) {
                     "| secp256k1 | {} bytes (1.00x) | {} bytes (1.00x) | {} bytes (1.00x) | {} bytes (1.00x) |",
                     secp_seckey_size, secp_pubkey_size, secp_sig_size, secp_pk_sig_size
                 );
-            } else if trimmed_line.starts_with("| FN-DSA-512 |") {
-                // Order matches commit diff
-                let fn_pubkey_size = size_results.get("fn_dsa_512_pubkey").cloned().unwrap_or(0);
-                let fn_seckey_size = size_results.get("fn_dsa_512_seckey").cloned().unwrap_or(0);
-                let fn_sig_size = size_results.get("fn_dsa_512_sig").cloned().unwrap_or(0);
-                let fn_pk_sig_size = size_results.get("fn_dsa_512_pk_sig").cloned().unwrap_or(0);
-                line_to_push = format!(
-                    "| FN-DSA-512 | {} bytes ({:.2}x) | {} bytes ({:.2}x) | {} bytes ({:.2}x) | {} bytes ({:.2}x) |",
-                    fn_seckey_size, if secp_seckey_size > 0 { fn_seckey_size as f64 / secp_seckey_size as f64 } else { 0.0 },
-                    fn_pubkey_size, if secp_pubkey_size > 0 { fn_pubkey_size as f64 / secp_pubkey_size as f64 } else { 0.0 },
-                    fn_sig_size, if secp_sig_size > 0 { fn_sig_size as f64 / secp_sig_size as f64 } else { 0.0 },
-                    fn_pk_sig_size, if secp_pk_sig_size > 0 { fn_pk_sig_size as f64 / secp_pk_sig_size as f64 } else { 0.0 }
-                );
             } else if trimmed_line.starts_with("| ML-DSA-44 |") {
                 let ml_pubkey_size = size_results.get("ml_dsa_44_pubkey").cloned().unwrap_or(0);
                 let ml_seckey_size = size_results.get("ml_dsa_44_seckey").cloned().unwrap_or(0);
@@ -485,8 +376,6 @@ fn generate_report(_c: &mut Criterion) {
         updated_lines.push("|-----------|----------------|---------|--------------|".to_string());
         updated_lines.push("| secp256k1 | 1.00x | 1.00x | 1.00x |".to_string());
         updated_lines
-            .push("| FN-DSA-512 | *Needs Update* | *Needs Update* | *Needs Update* |".to_string()); // Placeholders - Order matches commit
-        updated_lines
             .push("| ML-DSA-44 | *Needs Update* | *Needs Update* | *Needs Update* |".to_string()); // Placeholders
         updated_lines.push(
             "| SLH-DSA-128S | *Needs Update* | *Needs Update* | *Needs Update* |".to_string(),
@@ -505,19 +394,6 @@ fn generate_report(_c: &mut Criterion) {
         updated_lines.push(format!(
             "| secp256k1 | {} bytes (1.00x) | {} bytes (1.00x) | {} bytes (1.00x) | {} bytes (1.00x) |",
             secp_seckey_size, secp_pubkey_size, secp_sig_size, secp_pk_sig_size
-        ));
-
-        // FN-DSA line (Order matches commit)
-        let fn_pubkey_size = size_results.get("fn_dsa_512_pubkey").cloned().unwrap_or(0);
-        let fn_seckey_size = size_results.get("fn_dsa_512_seckey").cloned().unwrap_or(0);
-        let fn_sig_size = size_results.get("fn_dsa_512_sig").cloned().unwrap_or(0);
-        let fn_pk_sig_size = size_results.get("fn_dsa_512_pk_sig").cloned().unwrap_or(0);
-        updated_lines.push(format!(
-            "| FN-DSA-512 | {} bytes ({:.2}x) | {} bytes ({:.2}x) | {} bytes ({:.2}x) | {} bytes ({:.2}x) |",
-            fn_seckey_size, if secp_seckey_size > 0 { fn_seckey_size as f64 / secp_seckey_size as f64 } else { 0.0 },
-            fn_pubkey_size, if secp_pubkey_size > 0 { fn_pubkey_size as f64 / secp_pubkey_size as f64 } else { 0.0 },
-            fn_sig_size, if secp_sig_size > 0 { fn_sig_size as f64 / secp_sig_size as f64 } else { 0.0 },
-            fn_pk_sig_size, if secp_pk_sig_size > 0 { fn_pk_sig_size as f64 / secp_pk_sig_size as f64 } else { 0.0 }
         ));
 
         // ML-DSA line
@@ -597,9 +473,6 @@ criterion_group!(
     bench_slh_dsa_128s_keygen,
     bench_slh_dsa_128s_signing,
     bench_slh_dsa_128s_verification,
-    bench_fn_dsa_512_keygen,
-    bench_fn_dsa_512_signing,
-    bench_fn_dsa_512_verification,
     bench_sizes,
     generate_report
 );

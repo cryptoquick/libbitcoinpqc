@@ -17,10 +17,9 @@ pub mod doc_bindings {
     impl bitcoin_pqc_algorithm_t {
         pub const BITCOIN_PQC_SECP256K1_SCHNORR: bitcoin_pqc_algorithm_t =
             bitcoin_pqc_algorithm_t(0);
-        pub const BITCOIN_PQC_FN_DSA_512: bitcoin_pqc_algorithm_t = bitcoin_pqc_algorithm_t(1);
-        pub const BITCOIN_PQC_ML_DSA_44: bitcoin_pqc_algorithm_t = bitcoin_pqc_algorithm_t(2);
+        pub const BITCOIN_PQC_ML_DSA_44: bitcoin_pqc_algorithm_t = bitcoin_pqc_algorithm_t(1);
         pub const BITCOIN_PQC_SLH_DSA_SHAKE_128S: bitcoin_pqc_algorithm_t =
-            bitcoin_pqc_algorithm_t(3);
+            bitcoin_pqc_algorithm_t(2);
     }
 
     #[repr(C)]
@@ -132,10 +131,9 @@ pub mod ide_bindings {
     impl bitcoin_pqc_algorithm_t {
         pub const BITCOIN_PQC_SECP256K1_SCHNORR: bitcoin_pqc_algorithm_t =
             bitcoin_pqc_algorithm_t(0);
-        pub const BITCOIN_PQC_FN_DSA_512: bitcoin_pqc_algorithm_t = bitcoin_pqc_algorithm_t(1);
-        pub const BITCOIN_PQC_ML_DSA_44: bitcoin_pqc_algorithm_t = bitcoin_pqc_algorithm_t(2);
+        pub const BITCOIN_PQC_ML_DSA_44: bitcoin_pqc_algorithm_t = bitcoin_pqc_algorithm_t(1);
         pub const BITCOIN_PQC_SLH_DSA_SHAKE_128S: bitcoin_pqc_algorithm_t =
-            bitcoin_pqc_algorithm_t(3);
+            bitcoin_pqc_algorithm_t(2);
     }
 
     #[repr(C)]

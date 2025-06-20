@@ -122,8 +122,6 @@ impl From<bitcoin_pqc_error_t> for Result<(), PqcError> {
 pub enum Algorithm {
     /// BIP-340 Schnorr + X-Only - Elliptic Curve Digital Signature Algorithm
     SECP256K1_SCHNORR,
-    /// FN-DSA-512 (FALCON) - Fast Fourier lattice-based signature scheme
-    FN_DSA_512,
     /// ML-DSA-44 (CRYSTALS-Dilithium) - Lattice-based signature scheme
     ML_DSA_44,
     /// SLH-DSA-Shake-128s (SPHINCS+) - Hash-based signature scheme
@@ -134,7 +132,6 @@ impl From<Algorithm> for bitcoin_pqc_algorithm_t {
     fn from(alg: Algorithm) -> Self {
         match alg {
             Algorithm::SECP256K1_SCHNORR => bitcoin_pqc_algorithm_t::BITCOIN_PQC_SECP256K1_SCHNORR,
-            Algorithm::FN_DSA_512 => bitcoin_pqc_algorithm_t::BITCOIN_PQC_FN_DSA_512,
             Algorithm::ML_DSA_44 => bitcoin_pqc_algorithm_t::BITCOIN_PQC_ML_DSA_44,
             Algorithm::SLH_DSA_128S => bitcoin_pqc_algorithm_t::BITCOIN_PQC_SLH_DSA_SHAKE_128S,
             _ => panic!("Invalid algorithm"),
@@ -150,7 +147,6 @@ impl TryFrom<String> for Algorithm {
     fn try_from(s: String) -> Result<Self, Self::Error> {
         match s.as_str() {
             "SECP256K1_SCHNORR" => Ok(Algorithm::SECP256K1_SCHNORR),
-            "FN_DSA_512" => Ok(Algorithm::FN_DSA_512),
             "ML_DSA_44" => Ok(Algorithm::ML_DSA_44),
             "SLH_DSA_128S" => Ok(Algorithm::SLH_DSA_128S),
             _ => Err(format!("Unknown algorithm string: {s}")),
@@ -163,7 +159,6 @@ impl From<Algorithm> for String {
     fn from(alg: Algorithm) -> Self {
         match alg {
             Algorithm::SECP256K1_SCHNORR => "SECP256K1_SCHNORR".to_string(),
-            Algorithm::FN_DSA_512 => "FN_DSA_512".to_string(),
             Algorithm::ML_DSA_44 => "ML_DSA_44".to_string(),
             Algorithm::SLH_DSA_128S => "SLH_DSA_128S".to_string(),
             _ => panic!("Invalid algorithm variant"), // Should not happen with bitmask
@@ -175,7 +170,6 @@ impl fmt::Display for Algorithm {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Algorithm::SECP256K1_SCHNORR => write!(f, "SECP256K1_SCHNORR"),
-            Algorithm::FN_DSA_512 => write!(f, "FN_DSA_512"),
             Algorithm::ML_DSA_44 => write!(f, "ML_DSA_44"),
             Algorithm::SLH_DSA_128S => write!(f, "SLH_DSA_128S"),
             _ => write!(f, "Unknown({:b})", self.bits),
@@ -188,7 +182,6 @@ impl Algorithm {
     pub fn debug_name(&self) -> String {
         match *self {
             Algorithm::SECP256K1_SCHNORR => "SECP256K1_SCHNORR".to_string(),
-            Algorithm::FN_DSA_512 => "FN_DSA_512".to_string(),
             Algorithm::ML_DSA_44 => "ML_DSA_44".to_string(),
             Algorithm::SLH_DSA_128S => "SLH_DSA_128S".to_string(),
             _ => format!("Unknown({:b})", self.bits),
@@ -196,11 +189,12 @@ impl Algorithm {
     }
 }
 
-/// Creates an Algorithm variant infallibly from an index 0..3.
-/// Maps 0 -> SECP256K1_SCHNORR (1), 1 -> FN_DSA_512 (2), 2 -> ML_DSA_44 (4), 3 -> SLH_DSA_128S (8)
+/// Creates an Algorithm variant infallibly from an index 0..2.
+/// Maps 0 -> SECP256K1_SCHNORR (1), 1 -> ML_DSA_44 (2), 2 -> SLH_DSA_128S (4)
+/// TODO: ensure this is correct mapping with FN_DSA out!
 pub fn algorithm_from_index(index: u8) -> Algorithm {
-    let valid_index = index % 4; // Ensure value is within 0..3
-    let bits = 1u8 << valid_index; // Map 0->1, 1->2, 2->4, 3->8
+    let valid_index = index % 4; // Ensure value is within 0..2
+    let bits = 1u8 << valid_index; // Map 0->1, 1->2, 2->4, 3->8 ...
     Algorithm::from(bits)
 }
 

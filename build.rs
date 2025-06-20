@@ -13,7 +13,6 @@ fn main() {
     println!("cargo:rerun-if-changed=include/libbitcoinpqc/bitcoinpqc.h");
     println!("cargo:rerun-if-changed=include/libbitcoinpqc/ml_dsa.h");
     println!("cargo:rerun-if-changed=include/libbitcoinpqc/slh_dsa.h");
-    println!("cargo:rerun-if-changed=include/libbitcoinpqc/fn_dsa.h");
 
     // The bindgen::Builder is the main entry point to bindgen
     let bindings = bindgen::Builder::default()

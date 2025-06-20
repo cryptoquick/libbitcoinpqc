@@ -1,10 +1,9 @@
 # libbitcoinpqc
 
-A C library with Rust bindings for Post-Quantum Cryptographic (PQC) signature algorithms. This library implements three NIST PQC standardized or candidate signature algorithms for use with [BIP-360](https://github.com/cryptoquick/bips/blob/p2qrh/bip-0360.mediawiki) and the Bitcoin QuBit soft fork:
+A C library, with Rust bindings, for Post-Quantum Cryptographic (PQC) signature algorithms. This library implements two NIST PQC standard signature algorithms for use with [BIP-360](https://github.com/cryptoquick/bips/blob/p2qrh/bip-0360.mediawiki) and the Bitcoin QuBit soft fork:
 
 1. **ML-DSA-44** (formerly CRYSTALS-Dilithium): A structured lattice-based digital signature scheme that is part of the NIST PQC standardization.
 2. **SLH-DSA-Shake-128s** (formerly SPHINCS+): A stateless hash-based signature scheme with minimal security assumptions.
-3. **FN-DSA-512** (formerly FALCON): A lattice-based signature scheme designed for efficiency and compact signatures.
 
 Notice that all PQC signature algorithms used are certified according to the Federal Information Processing Standards, or FIPS. This should help in the future with native hardware support.
 
@@ -27,7 +26,6 @@ This library serves as the cryptographic foundation for the Bitcoin QuBit soft f
 | Algorithm | Public Key Size | Secret Key Size | Signature Size | Security Level |
 |-----------|----------------|----------------|----------------|----------------|
 | secp256k1 | 32 bytes | 32 bytes | 64 bytes | Classical |
-| FN-DSA-512 | 897 bytes | 1,281 bytes | ~666 bytes (average) | NIST Level 1 |
 | ML-DSA-44 | 1,312 bytes | 2,528 bytes | 2,420 bytes | NIST Level 2 |
 | SLH-DSA-SHAKE-128s | 32 bytes | 64 bytes | 7,856 bytes | NIST Level 1 |
 
@@ -35,7 +33,7 @@ See [REPORT.md](benches/REPORT.md) for performance and size comparison to secp25
 
 ## Security Notes
 
-- This library does not provide its own random number generation. Users must provide entropy from a secure source.
+- This library does not provide its own random number generation. It is essential that the user provide entropy from a cryptographically secure source.
 - Random data is required for key generation, but not for signing. All signatures are deterministic, based on the message and secret key.
 - The implementations are based on reference code from the NIST PQC standardization process and are not production-hardened.
 - Care should be taken to securely manage secret keys in applications.
@@ -54,7 +52,6 @@ Cryptographic dependencies included in this project:
 
 - https://github.com/sphincs/sphincsplus - `7ec789ace6874d875f4bb84cb61b81155398167e`
 - https://github.com/pq-crystals/dilithium - `444cdcc84eb36b66fe27b3a2529ee48f6d8150c2`
-- https://falcon-sign.info/Falcon-impl-20211101.zip
 
 ## Building the Library
 
@@ -223,7 +220,6 @@ The Python API mirrors the C API closely, with some Pythonic improvements:
 
 - **Algorithm** - Enum class for algorithm selection
   - `SECP256K1_SCHNORR`
-  - `FN_DSA_512` (FALCON)
   - `ML_DSA_44` (CRYSTALS-Dilithium)
   - `SLH_DSA_SHAKE_128S` (SPHINCS+)
 
@@ -292,7 +288,6 @@ The TypeScript API provides a clean, modern interface:
 
 - **Algorithm** - Enum for algorithm selection
   - `SECP256K1_SCHNORR`
-  - `FN_DSA_512` (FALCON)
   - `ML_DSA_44` (CRYSTALS-Dilithium)
   - `SLH_DSA_SHAKE_128S` (SPHINCS+)
 

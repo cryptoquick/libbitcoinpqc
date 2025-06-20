@@ -26,12 +26,6 @@ cargo bench -- ml_dsa_44
 cargo bench -- slh_dsa_128s
 ```
 
-### FN-DSA-512 (FALCON)
-
-```
-cargo bench -- fn_dsa_512
-```
-
 ### secp256k1 (for comparison)
 
 ```
@@ -89,7 +83,7 @@ cargo bench -- sizes
 If you encounter any issues with a specific algorithm, try running only that algorithm's benchmarks:
 
 ```
-cargo bench -- fn_dsa_512
+cargo bench -- ml_dsa_44
 ```
 
 This can help identify any issues with the algorithm implementation.
