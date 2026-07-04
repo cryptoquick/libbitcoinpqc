@@ -89,15 +89,13 @@ Cryptographic dependencies included in this project:
 ### Building
 
 ```bash
-# Clone the repository
+# Clone the Repository
 git clone https://github.com/bitcoin/libbitcoinpqc.git
 cd libbitcoinpqc
 
-# Build the C library using CMake
-mkdir build
-cd build
-cmake ..
-make
+# Build the C Library
+chmod +x build.sh
+./build.sh
 ```
 
 ## C API Usage

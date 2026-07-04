@@ -15,13 +15,6 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# Include directories
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/dilithium/ref
-    ${CMAKE_CURRENT_SOURCE_DIR}/sphincsplus/ref
-)
-
 # Custom randombytes implementation
 set(CUSTOM_RANDOMBYTES
     src/randombytes_custom.c
@@ -68,28 +61,41 @@ set(BITCOINPQC_SOURCES
     src/slh_dsa/verify.c
 )
 
-# Define the main library target
-add_library(bitcoinpqc STATIC
+set(ALL_SOURCES
     ${BITCOINPQC_SOURCES}
     ${ML_DSA_SOURCES}
     ${SLH_DSA_SOURCES}
     ${CUSTOM_RANDOMBYTES}
 )
 
-# Set include directories for the library
-target_include_directories(bitcoinpqc PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
+# Helper to apply common settings to a target
+function(configure_target target)
+    # Set include directories for the target
+    target_include_directories(${target} PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/dilithium/ref
+        ${CMAKE_CURRENT_SOURCE_DIR}/sphincsplus/ref
+    )
+    # Set compile definitions for the target
+    target_compile_definitions(${target} PRIVATE
+        DILITHIUM_MODE=2
+        PARAMS=sphincs-shake-128s
+        CUSTOM_RANDOMBYTES=1
+    )
+endfunction()
 
-# Set compile definitions for the library
-target_compile_definitions(bitcoinpqc PRIVATE
-    DILITHIUM_MODE=2  # ML-DSA-44 (Dilithium2)
-    PARAMS=sphincs-shake-128s
-    CUSTOM_RANDOMBYTES=1
-)
+# Define the static library targets
+add_library(bitcoinpqc STATIC ${ALL_SOURCES})
+configure_target(bitcoinpqc)
+
+# Define the shared object target
+add_library(bitcoinpqc_shared SHARED ${ALL_SOURCES})
+configure_target(bitcoinpqc_shared)
+set_target_properties(bitcoinpqc_shared PROPERTIES OUTPUT_NAME bitcoinpqc)
+
 
 # Configure install paths
-install(TARGETS bitcoinpqc
+install(TARGETS bitcoinpqc bitcoinpqc_shared
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin
