@@ -33,19 +33,19 @@ set(ML_DSA_SOURCES
     dilithium/ref/symmetric-shake.c
 )
 
-# SLH-DSA-Shake-128s (SPHINCS+) source files
+# SLH-DSA-SHA2-128s (SPHINCS+) source files
 set(SLH_DSA_SOURCES
     sphincsplus/ref/address.c
     sphincsplus/ref/fors.c
-    sphincsplus/ref/hash_shake.c
+    sphincsplus/ref/hash_sha2.c
     sphincsplus/ref/merkle.c
     sphincsplus/ref/sign.c
-    sphincsplus/ref/thash_shake_simple.c
+    sphincsplus/ref/thash_sha2_simple.c
     sphincsplus/ref/utils.c
     sphincsplus/ref/utilsx1.c
     sphincsplus/ref/wots.c
     sphincsplus/ref/wotsx1.c
-    sphincsplus/ref/fips202.c
+    sphincsplus/ref/sha2.c
 )
 
 # libbitcoinpqc source files
@@ -79,7 +79,7 @@ function(configure_target target)
     # Set compile definitions for the target
     target_compile_definitions(${target} PRIVATE
         DILITHIUM_MODE=2
-        PARAMS=sphincs-shake-128s
+        PARAMS=sphincs-sha2-128s
         CUSTOM_RANDOMBYTES=1
     )
 endfunction()
@@ -105,3 +105,26 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
     DESTINATION include
     FILES_MATCHING PATTERN "*.h"
 )
+
+# Optional examples and tests
+option(BUILD_EXAMPLES "Build example programs" OFF)
+option(BUILD_TESTS "Build and register CTest targets" ON)
+
+if(BUILD_EXAMPLES)
+    add_executable(entropy_demo examples/entropy_demo.c)
+    target_link_libraries(entropy_demo PRIVATE bitcoinpqc)
+    target_include_directories(entropy_demo PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+endif()
+
+if(BUILD_TESTS)
+    enable_testing()
+
+    add_executable(slh_dsa_sha2_test tests/slh_dsa_sha2_test.c)
+    target_link_libraries(slh_dsa_sha2_test PRIVATE bitcoinpqc)
+    target_include_directories(slh_dsa_sha2_test PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests
+    )
+
+    add_test(NAME slh_dsa_sha2_api COMMAND slh_dsa_sha2_test)
+endif()

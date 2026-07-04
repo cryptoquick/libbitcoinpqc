@@ -5,7 +5,7 @@
  * This library provides implementations of post-quantum cryptographic
  * signature algorithms for use with BIP-360 and the Bitcoin QuBit soft fork:
  * - ML-DSA-44 (CRYSTALS-Dilithium)
- * - SLH-DSA-Shake-128s (SPHINCS+)
+ * - SLH-DSA-SHA2-128s (SPHINCS+)
  */
 
 #ifndef BITCOIN_PQC_H
@@ -22,7 +22,7 @@ extern "C" {
 typedef enum {
     BITCOIN_PQC_SECP256K1_SCHNORR = 0,  /* BIP-340 Schnorr + X-Only */
     BITCOIN_PQC_ML_DSA_44 = 1,          /* FIPS 204 - CRYSTALS-Dilithium Level I */
-    BITCOIN_PQC_SLH_DSA_SHAKE_128S = 2  /* FIPS 205 - SPHINCS+-128s */
+    BITCOIN_PQC_SLH_DSA_SHA2_128S = 2  /* FIPS 205 - SLH-DSA-SHA2-128s */
 } bitcoin_pqc_algorithm_t;
 
 /* Common error codes */

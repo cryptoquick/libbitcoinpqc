@@ -18,8 +18,8 @@ size_t bitcoin_pqc_public_key_size(bitcoin_pqc_algorithm_t algorithm) {
             return 32; // X-only public key size for secp256k1
         case BITCOIN_PQC_ML_DSA_44:
             return ML_DSA_44_PUBLIC_KEY_SIZE;
-        case BITCOIN_PQC_SLH_DSA_SHAKE_128S:
-            return SLH_DSA_SHAKE_128S_PUBLIC_KEY_SIZE;
+        case BITCOIN_PQC_SLH_DSA_SHA2_128S:
+            return SLH_DSA_SHA2_128S_PUBLIC_KEY_SIZE;
         default:
             return 0;
     }
@@ -31,8 +31,8 @@ size_t bitcoin_pqc_secret_key_size(bitcoin_pqc_algorithm_t algorithm) {
             return 32; // Private key size for secp256k1
         case BITCOIN_PQC_ML_DSA_44:
             return ML_DSA_44_SECRET_KEY_SIZE;
-        case BITCOIN_PQC_SLH_DSA_SHAKE_128S:
-            return SLH_DSA_SHAKE_128S_SECRET_KEY_SIZE;
+        case BITCOIN_PQC_SLH_DSA_SHA2_128S:
+            return SLH_DSA_SHA2_128S_SECRET_KEY_SIZE;
         default:
             return 0;
     }
@@ -44,8 +44,8 @@ size_t bitcoin_pqc_signature_size(bitcoin_pqc_algorithm_t algorithm) {
             return 64; // Schnorr signature size for secp256k1
         case BITCOIN_PQC_ML_DSA_44:
             return ML_DSA_44_SIGNATURE_SIZE;
-        case BITCOIN_PQC_SLH_DSA_SHAKE_128S:
-            return SLH_DSA_SHAKE_128S_SIGNATURE_SIZE;
+        case BITCOIN_PQC_SLH_DSA_SHA2_128S:
+            return SLH_DSA_SHA2_128S_SIGNATURE_SIZE;
         default:
             return 0;
     }
@@ -93,8 +93,8 @@ bitcoin_pqc_error_t bitcoin_pqc_keygen(
         case BITCOIN_PQC_ML_DSA_44:
             result = ml_dsa_44_keygen(pk, sk, random_data, random_data_size);
             break;
-        case BITCOIN_PQC_SLH_DSA_SHAKE_128S:
-            result = slh_dsa_shake_128s_keygen(pk, sk, random_data, random_data_size);
+        case BITCOIN_PQC_SLH_DSA_SHA2_128S:
+            result = slh_dsa_sha2_128s_keygen(pk, sk, random_data, random_data_size);
             break;
         default:
             free(pk);
@@ -192,9 +192,9 @@ bitcoin_pqc_error_t bitcoin_pqc_sign(
             result = ml_dsa_44_sign(sig, &actual_sig_len, message, message_size,
                                   secret_key);
             break;
-        case BITCOIN_PQC_SLH_DSA_SHAKE_128S:
-            DEBUG_PRINT("bitcoin_pqc_sign: Calling slh_dsa_shake_128s_sign\n");
-            result = slh_dsa_shake_128s_sign(sig, &actual_sig_len, message, message_size,
+        case BITCOIN_PQC_SLH_DSA_SHA2_128S:
+            DEBUG_PRINT("bitcoin_pqc_sign: Calling slh_dsa_sha2_128s_sign\n");
+            result = slh_dsa_sha2_128s_sign(sig, &actual_sig_len, message, message_size,
                                            secret_key);
             break;
         default:
@@ -208,6 +208,9 @@ bitcoin_pqc_error_t bitcoin_pqc_sign(
 
     if (result != 0) {
         free(sig);
+        if (result == -1) {
+            return BITCOIN_PQC_ERROR_BAD_ARG;
+        }
         return BITCOIN_PQC_ERROR_BAD_SIGNATURE;
     }
 
@@ -280,9 +283,9 @@ bitcoin_pqc_error_t bitcoin_pqc_verify(
             DEBUG_PRINT("bitcoin_pqc_verify: Calling ml_dsa_44_verify\n");
             result = ml_dsa_44_verify(signature, signature_size, message, message_size, public_key);
             break;
-        case BITCOIN_PQC_SLH_DSA_SHAKE_128S:
-            DEBUG_PRINT("bitcoin_pqc_verify: Calling slh_dsa_shake_128s_verify\n");
-            result = slh_dsa_shake_128s_verify(signature, signature_size, message, message_size, public_key);
+        case BITCOIN_PQC_SLH_DSA_SHA2_128S:
+            DEBUG_PRINT("bitcoin_pqc_verify: Calling slh_dsa_sha2_128s_verify\n");
+            result = slh_dsa_sha2_128s_verify(signature, signature_size, message, message_size, public_key);
             break;
         default:
             DEBUG_PRINT("bitcoin_pqc_verify: Unsupported algorithm %d\n", algorithm);
