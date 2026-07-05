@@ -2,9 +2,9 @@ name: C CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, 27-slh-dsa-sha-2-128s, wasm-tests ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, 27-slh-dsa-sha-2-128s, wasm-tests ]
 
 jobs:
   build:
