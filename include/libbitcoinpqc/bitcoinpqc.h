@@ -84,7 +84,9 @@ size_t bitcoin_pqc_signature_size(bitcoin_pqc_algorithm_t algorithm);
  * @param algorithm The algorithm to use
  * @param keypair Pointer to keypair structure to populate
  * @param random_data User-provided random data (entropy)
- * @param random_data_size Size of random data, must be >= 128 bytes
+ * @param random_data_size Size of random data:
+ *     - BITCOIN_PQC_SECP256K1_SCHNORR: must be >= 32 bytes (first 32 used as secret key)
+ *     - PQC algorithms: must be >= 128 bytes
  * @return BITCOIN_PQC_OK on success, error code otherwise
  */
 bitcoin_pqc_error_t bitcoin_pqc_keygen(
@@ -108,7 +110,10 @@ void bitcoin_pqc_keypair_free(bitcoin_pqc_keypair_t *keypair);
  * @param secret_key The secret key to sign with
  * @param secret_key_size Size of the secret key
  * @param message The message to sign
- * @param message_size Size of the message
+ * @param message_size Size of the message:
+ *     - BITCOIN_PQC_SECP256K1_SCHNORR: must be >= 32 bytes; first 32 used as
+ *       pre-hashed message (BIP-340)
+ *     - PQC algorithms: raw message of any length
  * @param signature Pointer to signature structure to populate
  * @return BITCOIN_PQC_OK on success, error code otherwise
  */
@@ -135,7 +140,10 @@ void bitcoin_pqc_signature_free(bitcoin_pqc_signature_t *signature);
  * @param public_key The public key to verify with
  * @param public_key_size Size of the public key
  * @param message The message to verify
- * @param message_size Size of the message
+ * @param message_size Size of the message:
+ *     - BITCOIN_PQC_SECP256K1_SCHNORR: must be >= 32 bytes; first 32 used as
+ *       pre-hashed message (BIP-340)
+ *     - PQC algorithms: raw message of any length
  * @param signature The signature to verify
  * @param signature_size Size of the signature
  * @return BITCOIN_PQC_OK if signature is valid, error code otherwise
