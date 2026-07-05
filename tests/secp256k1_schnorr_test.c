@@ -8,6 +8,8 @@
 
 #include <libbitcoinpqc/bitcoinpqc.h>
 
+#include "vectors/secp256k1_bip340_vectors.h"
+
 static int failures;
 
 static void expect_true(int condition, const char *test_name) {
@@ -46,30 +48,19 @@ static int mem_eq_hex(const uint8_t *bytes, size_t len, const char *hex) {
 }
 
 static void test_bip340_row0_e2e(void) {
-    static const char *secret_hex =
-        "0000000000000000000000000000000000000000000000000000000000000003";
-    static const char *pubkey_hex =
-        "f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9";
-
-    uint8_t secret[32];
-    uint8_t message[32];
-    uint8_t tampered_message[32];
+    uint8_t tampered_message[SECP256K1_BIP340_MESSAGE_SIZE];
     bitcoin_pqc_keypair_t keypair;
     bitcoin_pqc_signature_t signature;
     bitcoin_pqc_error_t err;
 
-    memset(message, 0, sizeof(message));
-    memcpy(tampered_message, message, sizeof(message));
+    memcpy(tampered_message, SECP256K1_BIP340_ROW0_MESSAGE, sizeof(tampered_message));
     tampered_message[31] ^= 0x01;
-
-    expect_true(hex_to_bytes(secret_hex, secret, sizeof(secret)) == 0,
-                "test_bip340_row0_e2e: decode secret hex");
 
     err = bitcoin_pqc_keygen(
         BITCOIN_PQC_SECP256K1_SCHNORR,
         &keypair,
-        secret,
-        sizeof(secret)
+        SECP256K1_BIP340_ROW0_SECRET,
+        sizeof(SECP256K1_BIP340_ROW0_SECRET)
     );
     expect_true(err == BITCOIN_PQC_OK, "test_bip340_row0_e2e: keygen succeeds");
     if (err != BITCOIN_PQC_OK) {
@@ -77,11 +68,13 @@ static void test_bip340_row0_e2e(void) {
     }
 
     expect_true(
-        mem_eq_hex(keypair.public_key, 32, pubkey_hex),
+        memcmp(keypair.public_key, SECP256K1_BIP340_ROW0_EXPECTED_PK,
+               SECP256K1_BIP340_PK_SIZE) == 0,
         "test_bip340_row0_e2e: public key matches BIP-340 row 0"
     );
     expect_true(
-        mem_eq_hex(keypair.secret_key, 32, secret_hex),
+        memcmp(keypair.secret_key, SECP256K1_BIP340_ROW0_SECRET,
+               SECP256K1_BIP340_SECRET_SIZE) == 0,
         "test_bip340_row0_e2e: secret key matches input seed"
     );
 
@@ -89,8 +82,8 @@ static void test_bip340_row0_e2e(void) {
         BITCOIN_PQC_SECP256K1_SCHNORR,
         keypair.secret_key,
         keypair.secret_key_size,
-        message,
-        sizeof(message),
+        SECP256K1_BIP340_ROW0_MESSAGE,
+        sizeof(SECP256K1_BIP340_ROW0_MESSAGE),
         &signature
     );
     expect_true(err == BITCOIN_PQC_OK, "test_bip340_row0_e2e: sign succeeds");
@@ -99,15 +92,21 @@ static void test_bip340_row0_e2e(void) {
         return;
     }
 
-    expect_true(signature.signature_size == 64,
+    expect_true(signature.signature_size == SECP256K1_BIP340_SIG_SIZE,
                 "test_bip340_row0_e2e: signature size is 64 bytes");
+
+    expect_true(
+        memcmp(signature.signature, SECP256K1_BIP340_ROW0_EXPECTED_SIG,
+               SECP256K1_BIP340_SIG_SIZE) == 0,
+        "test_bip340_row0_e2e: signature matches golden vector (no aux_rand)"
+    );
 
     err = bitcoin_pqc_verify(
         BITCOIN_PQC_SECP256K1_SCHNORR,
         keypair.public_key,
         keypair.public_key_size,
-        message,
-        sizeof(message),
+        SECP256K1_BIP340_ROW0_MESSAGE,
+        sizeof(SECP256K1_BIP340_ROW0_MESSAGE),
         signature.signature,
         signature.signature_size
     );
