@@ -4,6 +4,7 @@
 #include "libbitcoinpqc/bitcoinpqc.h"
 #include "libbitcoinpqc/ml_dsa.h"
 #include "libbitcoinpqc/slh_dsa.h"
+#include "secp256k1_schnorr.h"
 
 // Debug mode flag - set to 0 to disable debug output
 #define BITCOIN_PQC_DEBUG 0
@@ -61,7 +62,11 @@ bitcoin_pqc_error_t bitcoin_pqc_keygen(
         return BITCOIN_PQC_ERROR_BAD_ARG;
     }
 
-    if (random_data_size < 128) {
+    if (algorithm == BITCOIN_PQC_SECP256K1_SCHNORR) {
+        if (random_data_size < 32) {
+            return BITCOIN_PQC_ERROR_BAD_ARG;
+        }
+    } else if (random_data_size < 128) {
         return BITCOIN_PQC_ERROR_BAD_ARG;
     }
 
@@ -86,9 +91,7 @@ bitcoin_pqc_error_t bitcoin_pqc_keygen(
     int result;
     switch (algorithm) {
         case BITCOIN_PQC_SECP256K1_SCHNORR:
-            // Placeholder for BIP-340 Schnorr key generation
-            // In a real implementation, this would call secp256k1 functions
-            result = -1; // Not implemented yet
+            result = secp256k1_schnorr_keygen(pk, sk, random_data, random_data_size);
             break;
         case BITCOIN_PQC_ML_DSA_44:
             result = ml_dsa_44_keygen(pk, sk, random_data, random_data_size);
@@ -182,10 +185,12 @@ bitcoin_pqc_error_t bitcoin_pqc_sign(
 
     switch (algorithm) {
         case BITCOIN_PQC_SECP256K1_SCHNORR:
-            // Placeholder for BIP-340 Schnorr signing
-            // In a real implementation, this would call secp256k1 functions
-            DEBUG_PRINT("bitcoin_pqc_sign: Schnorr signing not implemented yet\n");
-            result = -1; // Not implemented yet
+            if (message_size < 32) {
+                free(sig);
+                return BITCOIN_PQC_ERROR_BAD_ARG;
+            }
+            DEBUG_PRINT("bitcoin_pqc_sign: Calling secp256k1_schnorr_sign\n");
+            result = secp256k1_schnorr_sign(sig, &actual_sig_len, secret_key, message, message_size);
             break;
         case BITCOIN_PQC_ML_DSA_44:
             DEBUG_PRINT("bitcoin_pqc_sign: Calling ml_dsa_44_sign\n");
@@ -208,6 +213,15 @@ bitcoin_pqc_error_t bitcoin_pqc_sign(
 
     if (result != 0) {
         free(sig);
+        if (algorithm == BITCOIN_PQC_SECP256K1_SCHNORR) {
+            if (result == SECP256K1_SCHNORR_ERR_ARG) {
+                return BITCOIN_PQC_ERROR_BAD_ARG;
+            }
+            if (result == SECP256K1_SCHNORR_ERR_KEY) {
+                return BITCOIN_PQC_ERROR_BAD_KEY;
+            }
+            return BITCOIN_PQC_ERROR_BAD_SIGNATURE;
+        }
         if (result == -1) {
             return BITCOIN_PQC_ERROR_BAD_ARG;
         }
@@ -274,10 +288,18 @@ bitcoin_pqc_error_t bitcoin_pqc_verify(
     int result;
     switch (algorithm) {
         case BITCOIN_PQC_SECP256K1_SCHNORR:
-            // Placeholder for BIP-340 Schnorr verification
-            // In a real implementation, this would call secp256k1 functions
-            DEBUG_PRINT("bitcoin_pqc_verify: Schnorr verification not implemented yet\n");
-            result = -1; // Not implemented yet
+            if (message_size < 32) {
+                DEBUG_PRINT("bitcoin_pqc_verify: Schnorr message too short\n");
+                return BITCOIN_PQC_ERROR_BAD_ARG;
+            }
+            DEBUG_PRINT("bitcoin_pqc_verify: Calling secp256k1_schnorr_verify\n");
+            result = secp256k1_schnorr_verify(
+                signature,
+                signature_size,
+                message,
+                message_size,
+                public_key
+            );
             break;
         case BITCOIN_PQC_ML_DSA_44:
             DEBUG_PRINT("bitcoin_pqc_verify: Calling ml_dsa_44_verify\n");
@@ -295,6 +317,14 @@ bitcoin_pqc_error_t bitcoin_pqc_verify(
     DEBUG_PRINT("bitcoin_pqc_verify: Algorithm-specific verify function returned %d\n", result);
 
     if (result != 0) {
+        if (algorithm == BITCOIN_PQC_SECP256K1_SCHNORR) {
+            if (result == SECP256K1_SCHNORR_ERR_ARG) {
+                return BITCOIN_PQC_ERROR_BAD_ARG;
+            }
+            if (result == SECP256K1_SCHNORR_ERR_KEY) {
+                return BITCOIN_PQC_ERROR_BAD_KEY;
+            }
+        }
         return BITCOIN_PQC_ERROR_BAD_SIGNATURE;
     }
 
