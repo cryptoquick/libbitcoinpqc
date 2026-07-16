@@ -1,65 +1,58 @@
-name: C CI
+# Full verification gate. Locally: `just test`. CI runs the same recipes.
+name: ci
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build and Test
+  # Hermetic flake checks + host CMake dual-path (via nix develop if needed).
+  full:
+    name: just test
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v16
+
+      - name: Magic Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v9
+        continue-on-error: true
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Full gate
+        run: just test
+
+  # Non-Nix path: apt toolchain + FetchContent (classic packager path).
+  cmake:
+    name: host cmake (no nix)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake libssl-dev
+          sudo apt-get install -y build-essential cmake ninja-build git
 
-      - name: Configure
-        run: |
-          mkdir build
-          cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=ON
+      - name: Install just
+        uses: extractions/setup-just@v2
 
-      - name: Build
-        run: cmake --build build --verbose
-
-      - name: Run tests
-        run: cd build && ctest -V
-
-  build-matrix:
-    name: Build on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        # os: [ubuntu-latest, macos-latest]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Install dependencies (Ubuntu)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential cmake libssl-dev
-
-      - name: Install dependencies (macOS)
-        if: matrix.os == 'macos-latest'
-        run: |
-          brew install cmake
-
-      - name: Configure
-        run: |
-          mkdir build
-          cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=ON
-
-      - name: Build
-        run: cmake --build build --verbose
-
-      - name: Run tests
-        run: cd build && ctest -V
+      - name: Host CMake build + test + smoke
+        run: just cmake-test

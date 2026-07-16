@@ -1,20 +1,18 @@
-#include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include <stdint.h>
 #include "../../sphincsplus/ref/api.h"
-#include "../../sphincsplus/ref/fors.h"
-#include "../../sphincsplus/ref/hash.h"
-#include "../../sphincsplus/ref/thash.h"
-#include "../../sphincsplus/ref/utils.h"
-#include "../../sphincsplus/ref/address.h"
+#include "../../sphincsplus/ref/context.h"
+#include "../../sphincsplus/ref/sha2.h"
 #include "libbitcoinpqc/slh_dsa.h"
 #include "../randombytes_custom.h"
 
 /*
- * This file implements utility functions for SLH-DSA-Shake-128s (SPHINCS+)
+ * This file implements utility functions for SLH-DSA-SHA2-128s (SPHINCS+)
  * particularly related to random data handling
  */
+
+typedef char slh_dsa_sk_whole_sha256_blocks[
+    (CRYPTO_SECRETKEYBYTES % SPX_SHA256_BLOCK_BYTES) == 0 ? 1 : -1];
 
 /* Initialize the random data source */
 void slh_dsa_init_random_source(const uint8_t *random_data, size_t random_data_size) {
@@ -31,38 +29,40 @@ void slh_dsa_restore_original_random() {
     pqc_randombytes_cleanup();
 }
 
-/* Simple implementation of deterministic randomness from message and key */
-void slh_dsa_derandomize(uint8_t *seed, const uint8_t *m, size_t mlen, const uint8_t *sk) {
-    /* Create a buffer to hold combined data */
-    size_t combined_len = mlen + CRYPTO_SECRETKEYBYTES;
-    uint8_t *combined = malloc(combined_len);
+static void sha256_sk_m_domain(
+    uint8_t *out,
+    const uint8_t *m,
+    size_t mlen,
+    const uint8_t *sk,
+    uint8_t domain_byte
+) {
+    uint8_t state[40];
+    size_t sk_blocks = CRYPTO_SECRETKEYBYTES / SPX_SHA256_BLOCK_BYTES;
+    size_t full_blocks = mlen / SPX_SHA256_BLOCK_BYTES;
+    size_t m_remainder = mlen % SPX_SHA256_BLOCK_BYTES;
+    uint8_t tail[SPX_SHA256_BLOCK_BYTES];
+    size_t tail_len = 0;
 
-    if (combined) {
-        /* Combine secret key and message */
-        memcpy(combined, sk, CRYPTO_SECRETKEYBYTES);
-        memcpy(combined + CRYPTO_SECRETKEYBYTES, m, mlen);
-
-        /* Use custom hash function (simple XOR of message with key for each block) */
-        uint8_t buffer[64] = {0};
-        for (size_t i = 0; i < combined_len; i++) {
-            buffer[i % 64] ^= combined[i];
-        }
-
-        /* Ensure the randomness looks random enough */
-        for (size_t i = 0; i < 10; i++) {
-            for (size_t j = 0; j < 64; j++) {
-                buffer[j] = buffer[(j + 1) % 64] ^ buffer[(j + 7) % 64] ^ buffer[(j + 13) % 64];
-            }
-        }
-
-        /* Copy the result */
-        memcpy(seed, buffer, 64);
-
-        /* Clean up */
-        memset(combined, 0, combined_len);
-        free(combined);
-    } else {
-        /* Fallback if memory allocation fails */
-        memset(seed, 0, 64);
+    sha256_inc_init(state);
+    sha256_inc_blocks(state, sk, sk_blocks);
+    if (full_blocks > 0) {
+        sha256_inc_blocks(state, m, full_blocks);
     }
+    if (m_remainder > 0) {
+        memcpy(tail, m + full_blocks * SPX_SHA256_BLOCK_BYTES, m_remainder);
+        tail_len = m_remainder;
+    }
+    tail[tail_len++] = domain_byte;
+    sha256_inc_finalize(out, state, tail, tail_len);
+}
+
+/* Derive deterministic signing randomness from secret key and message via SHA-256 */
+int slh_dsa_derandomize(uint8_t *seed, const uint8_t *m, size_t mlen, const uint8_t *sk) {
+    if (!seed || !m || !sk) {
+        return -1;
+    }
+
+    sha256_sk_m_domain(seed, m, mlen, sk, 0x00);
+    sha256_sk_m_domain(seed + SPX_SHA256_OUTPUT_BYTES, m, mlen, sk, 0x01);
+    return 0;
 }

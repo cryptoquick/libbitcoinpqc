@@ -1,5 +1,8 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.14)
 project(libbitcoinpqc C)
+
+include(FetchContent)
+find_package(Threads REQUIRED)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -33,24 +36,48 @@ set(ML_DSA_SOURCES
     dilithium/ref/symmetric-shake.c
 )
 
-# SLH-DSA-Shake-128s (SPHINCS+) source files
+# SLH-DSA-SHA2-128s (SPHINCS+) source files
 set(SLH_DSA_SOURCES
     sphincsplus/ref/address.c
     sphincsplus/ref/fors.c
-    sphincsplus/ref/hash_shake.c
+    sphincsplus/ref/hash_sha2.c
     sphincsplus/ref/merkle.c
     sphincsplus/ref/sign.c
-    sphincsplus/ref/thash_shake_simple.c
+    sphincsplus/ref/thash_sha2_simple.c
     sphincsplus/ref/utils.c
     sphincsplus/ref/utilsx1.c
     sphincsplus/ref/wots.c
     sphincsplus/ref/wotsx1.c
-    sphincsplus/ref/fips202.c
+    sphincsplus/ref/sha2.c
+)
+
+# libsecp256k1 (BIP 340 Schnorr + x-only keys)
+# Keep in sync with flake.nix secp256k1 input (currently v0.7.1).
+FetchContent_Declare(
+    secp256k1
+    GIT_REPOSITORY https://github.com/bitcoin-core/secp256k1.git
+    GIT_TAG v0.7.1
+)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(SECP256K1_ENABLE_MODULE_SCHNORRSIG ON CACHE BOOL "" FORCE)
+set(SECP256K1_ENABLE_MODULE_EXTRAKEYS ON CACHE BOOL "" FORCE)
+set(SECP256K1_BUILD_BENCHMARK OFF CACHE BOOL "" FORCE)
+set(SECP256K1_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(SECP256K1_BUILD_EXHAUSTIVE_TESTS OFF CACHE BOOL "" FORCE)
+set(SECP256K1_BUILD_CTIME_TESTS OFF CACHE BOOL "" FORCE)
+set(SECP256K1_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(secp256k1)
+
+install(TARGETS secp256k1
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
 )
 
 # libbitcoinpqc source files
 set(BITCOINPQC_SOURCES
     src/bitcoinpqc.c
+    src/secp256k1_schnorr.c
     src/ml_dsa/utils.c
     src/ml_dsa/keygen.c
     src/ml_dsa/sign.c
@@ -73,13 +100,15 @@ function(configure_target target)
     # Set include directories for the target
     target_include_directories(${target} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${CMAKE_CURRENT_SOURCE_DIR}/dilithium/ref
         ${CMAKE_CURRENT_SOURCE_DIR}/sphincsplus/ref
     )
+    target_link_libraries(${target} PUBLIC secp256k1 Threads::Threads)
     # Set compile definitions for the target
     target_compile_definitions(${target} PRIVATE
         DILITHIUM_MODE=2
-        PARAMS=sphincs-shake-128s
+        PARAMS=sphincs-sha2-128s
         CUSTOM_RANDOMBYTES=1
     )
 endfunction()
@@ -105,3 +134,40 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
     DESTINATION include
     FILES_MATCHING PATTERN "*.h"
 )
+
+# Optional examples and tests
+option(BUILD_EXAMPLES "Build example programs" OFF)
+option(BUILD_TESTS "Build and register CTest targets" ON)
+
+if(BUILD_EXAMPLES)
+    add_executable(entropy_demo examples/entropy_demo.c)
+    target_link_libraries(entropy_demo PRIVATE bitcoinpqc)
+    target_include_directories(entropy_demo PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+endif()
+
+if(BUILD_TESTS)
+    enable_testing()
+
+    add_executable(slh_dsa_sha2_test tests/slh_dsa_sha2_test.c)
+    target_link_libraries(slh_dsa_sha2_test PRIVATE bitcoinpqc)
+    target_include_directories(slh_dsa_sha2_test PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests
+    )
+
+    add_test(NAME slh_dsa_sha2_api COMMAND slh_dsa_sha2_test)
+
+    add_executable(secp256k1_schnorr_test tests/secp256k1_schnorr_test.c)
+    target_link_libraries(secp256k1_schnorr_test PRIVATE bitcoinpqc)
+    target_include_directories(secp256k1_schnorr_test PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
+    add_test(NAME secp256k1_schnorr_e2e COMMAND secp256k1_schnorr_test)
+
+    add_executable(ml_dsa_44_test tests/ml_dsa_44_test.c)
+    target_link_libraries(ml_dsa_44_test PRIVATE bitcoinpqc)
+    target_include_directories(ml_dsa_44_test PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
+    add_test(NAME ml_dsa_44_e2e COMMAND ml_dsa_44_test)
+endif()

@@ -1,15 +1,13 @@
-#include <stdlib.h>
-#include <string.h>
 #include "libbitcoinpqc/slh_dsa.h"
 
 /*
- * This file implements the verification function for SLH-DSA-Shake-128s (SPHINCS+)
+ * This file implements the verification function for SLH-DSA-SHA2-128s (SPHINCS+)
  */
 
 /* Include necessary headers from SPHINCS+ reference implementation */
 #include "../../sphincsplus/ref/api.h"
 
-int slh_dsa_shake_128s_verify(
+int slh_dsa_sha2_128s_verify(
     const uint8_t *sig,
     size_t siglen,
     const uint8_t *m,

@@ -3,23 +3,14 @@
 #include "libbitcoinpqc/slh_dsa.h"
 
 /*
- * This file implements the key generation function for SLH-DSA-Shake-128s (SPHINCS+)
+ * This file implements the key generation function for SLH-DSA-SHA2-128s (SPHINCS+)
  */
 
 /* Include necessary headers from SPHINCS+ reference implementation */
 #include "../../sphincsplus/ref/api.h"
-#include "../../sphincsplus/ref/randombytes.h"
 #include "../../sphincsplus/ref/params.h"
 
-/*
- * External declaration for the random data utilities
- * These are implemented in src/slh_dsa/utils.c
- */
-extern void slh_dsa_init_random_source(const uint8_t *random_data, size_t random_data_size);
-extern void slh_dsa_setup_custom_random(void);
-extern void slh_dsa_restore_original_random(void);
-
-int slh_dsa_shake_128s_keygen(
+int slh_dsa_sha2_128s_keygen(
     uint8_t *pk,
     uint8_t *sk,
     const uint8_t *random_data,

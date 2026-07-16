@@ -31,11 +31,11 @@ generation. This means **32 bytes** of your provided data are consumed to
 seed the key generation process. The seed is then expanded
 deterministically by Dilithium's internal key derivation.
 
-### SLH-DSA-SHAKE-128s (SPHINCS+)
+### SLH-DSA-SHA2-128s (SPHINCS+)
 
-`slh_dsa_shake_128s_keygen()` passes your entropy buffer directly to
+`slh_dsa_sha2_128s_keygen()` passes your entropy buffer directly to
 `crypto_sign_seed_keypair()`, which uses the first `3 * SPX_N` bytes as the
-seed. For SHAKE-128s, `SPX_N = 16`, so **48 bytes** are consumed.
+seed. For SHA2-128s, `SPX_N = 16`, so **48 bytes** are consumed.
 
 ### The 128-Byte Minimum
 
@@ -44,15 +44,39 @@ provides a comfortable margin above the actual consumption (32 or 48 bytes)
 and ensures callers provide a meaningful amount of entropy rather than a
 handful of bytes that might be poorly generated.
 
-### Determinism
+### Key generation determinism
 
 Providing identical entropy produces identical keys. This is by design:
 
 - It enables reproducible test vectors.
-- It means the security of your keys depends entirely on the quality and
-  secrecy of the entropy you provide.
+- The security of your keys depends entirely on the quality and secrecy of
+  the entropy you provide.
 
-### Entropy Cycling
+### Signing determinism
+
+Signing does **not** accept caller-provided entropy. Both algorithms derive
+signing randomness deterministically from the message and secret key:
+
+**ML-DSA-44** uses SHAKE-256 over `sk ‖ m` (see `ml_dsa_derandomize()`).
+
+**SLH-DSA-SHA2-128s** uses domain-separated SHA-256:
+
+```
+seed[0..31]  = SHA-256(sk ‖ m ‖ 0x00)
+seed[32..63] = SHA-256(sk ‖ m ‖ 0x01)
+```
+
+That 64-byte seed is passed to the reference `randombytes()` hook before
+`crypto_sign_signature()`. The reference consumes 16 bytes as `optrand` for
+`gen_message_random()`.
+
+This is a **libbitcoinpqc policy** for reproducible signatures. It is not a
+FIPS 205 pure/hedged mode selector — it layers deterministic signing on the
+vendored reference implementation.
+
+Identical `(sk, m)` pairs therefore produce identical signatures.
+
+### Entropy cycling
 
 If the library's internal `randombytes()` requests exceed the size of your
 buffer, the implementation wraps around to the beginning and reuses data.
@@ -112,7 +136,7 @@ base their entropy on physical quantum processes.
 This walkthrough builds the library from source, acquires entropy from the
 command line, and pipes it into the included `examples/entropy_demo.c`
 program. The demo reads exactly 128 bytes of entropy from **stdin**, then
-generates ML-DSA-44 and SLH-DSA-SHAKE-128s key pairs, signs a message with
+generates ML-DSA-44 and SLH-DSA-SHA2-128s key pairs, signs a message with
 each, and verifies the signatures.
 
 ### Prerequisites
@@ -128,7 +152,7 @@ sudo dnf install gcc gcc-c++ cmake make
 ### Step 1: Build the Library
 
 ```bash
-git clone https://github.com/bitcoin/libbitcoinpqc.git
+git clone https://github.com/cryptoquick/libbitcoinpqc.git
 cd libbitcoinpqc
 
 mkdir build && cd build
@@ -203,7 +227,7 @@ ML-DSA-44 key pair generated successfully.
 Signature size: 2420 bytes
 Verification: PASS
 
-SLH-DSA-SHAKE-128s key pair generated successfully.
+SLH-DSA-SHA2-128s key pair generated successfully.
   Public key size: 32 bytes
   Secret key size: 64 bytes
   Public key (first 16 bytes): c4a81f...
