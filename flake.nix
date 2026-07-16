@@ -152,10 +152,13 @@
               ${libbitcoinpqc}/lib/libsecp256k1.a \
               -lpthread -lm
             ./smoke
-            # Public API symbols present in the static archive.
-            nm ${libbitcoinpqc}/lib/libbitcoinpqc.a | grep -q ' bitcoin_pqc_keygen$'
-            nm ${libbitcoinpqc}/lib/libbitcoinpqc.a | grep -q ' bitcoin_pqc_sign$'
-            nm ${libbitcoinpqc}/lib/libbitcoinpqc.a | grep -q ' bitcoin_pqc_verify$'
+            # Public API symbols in the static archive.
+            # Dump nm to a file first: `nm | grep -q` under `pipefail` can exit 141
+            # (SIGPIPE) when grep closes the pipe early — intermittent locally, fails on CI.
+            nm ${libbitcoinpqc}/lib/libbitcoinpqc.a > symbols.txt
+            grep -E '[[:space:]]bitcoin_pqc_keygen$' symbols.txt
+            grep -E '[[:space:]]bitcoin_pqc_sign$' symbols.txt
+            grep -E '[[:space:]]bitcoin_pqc_verify$' symbols.txt
             test -f ${libbitcoinpqc}/include/libbitcoinpqc/bitcoinpqc.h
             test -f ${libbitcoinpqc}/include/libbitcoinpqc/ml_dsa.h
             test -f ${libbitcoinpqc}/include/libbitcoinpqc/slh_dsa.h
