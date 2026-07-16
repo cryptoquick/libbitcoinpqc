@@ -51,19 +51,20 @@ set(SLH_DSA_SOURCES
     sphincsplus/ref/sha2.c
 )
 
-# libsecp256k1 (BIP-340 Schnorr + x-only keys)
+# libsecp256k1 (BIP 340 Schnorr + x-only keys)
+# Keep in sync with flake.nix secp256k1 input (currently v0.7.1).
 FetchContent_Declare(
     secp256k1
     GIT_REPOSITORY https://github.com/bitcoin-core/secp256k1.git
-    GIT_TAG v0.5.0
+    GIT_TAG v0.7.1
 )
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-set(SECP256K1_DISABLE_SHARED ON CACHE BOOL "" FORCE)
 set(SECP256K1_ENABLE_MODULE_SCHNORRSIG ON CACHE BOOL "" FORCE)
 set(SECP256K1_ENABLE_MODULE_EXTRAKEYS ON CACHE BOOL "" FORCE)
 set(SECP256K1_BUILD_BENCHMARK OFF CACHE BOOL "" FORCE)
 set(SECP256K1_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(SECP256K1_BUILD_EXHAUSTIVE_TESTS OFF CACHE BOOL "" FORCE)
+set(SECP256K1_BUILD_CTIME_TESTS OFF CACHE BOOL "" FORCE)
 set(SECP256K1_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(secp256k1)
 

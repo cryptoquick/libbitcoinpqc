@@ -2,10 +2,14 @@
  * @file bitcoinpqc.h
  * @brief Main header file for the Bitcoin PQC library
  *
- * This library provides implementations of post-quantum cryptographic
- * signature algorithms for use with BIP-360 and the Bitcoin QuBit soft fork:
- * - ML-DSA-44 (CRYSTALS-Dilithium)
- * - SLH-DSA-SHA2-128s (SPHINCS+)
+ * Signature primitives for Bitcoin quantum-resistance work. Post-quantum
+ * signatures are a separate effort from BIP 360 (Pay-to-Merkle-Root / P2MR),
+ * which is a consensus output type and does not define PQC schemes.
+ *
+ * Algorithms:
+ * - ML-DSA-44 (CRYSTALS-Dilithium, FIPS 204) — NIST Level 2
+ * - SLH-DSA-SHA2-128s (SPHINCS+, FIPS 205) — NIST Level 1
+ * - secp256k1 Schnorr (BIP 340)
  */
 
 #ifndef BITCOIN_PQC_H
@@ -20,9 +24,9 @@ extern "C" {
 
 /* Algorithm identifiers */
 typedef enum {
-    BITCOIN_PQC_SECP256K1_SCHNORR = 0,  /* BIP-340 Schnorr + X-Only */
-    BITCOIN_PQC_ML_DSA_44 = 1,          /* FIPS 204 - CRYSTALS-Dilithium Level I */
-    BITCOIN_PQC_SLH_DSA_SHA2_128S = 2  /* FIPS 205 - SLH-DSA-SHA2-128s */
+    BITCOIN_PQC_SECP256K1_SCHNORR = 0,  /* BIP 340 Schnorr + X-Only */
+    BITCOIN_PQC_ML_DSA_44 = 1,          /* FIPS 204 - CRYSTALS-Dilithium Level 2 */
+    BITCOIN_PQC_SLH_DSA_SHA2_128S = 2  /* FIPS 205 - SLH-DSA-SHA2-128s Level 1 */
 } bitcoin_pqc_algorithm_t;
 
 /* Common error codes */
@@ -112,7 +116,7 @@ void bitcoin_pqc_keypair_free(bitcoin_pqc_keypair_t *keypair);
  * @param message The message to sign
  * @param message_size Size of the message:
  *     - BITCOIN_PQC_SECP256K1_SCHNORR: must be >= 32 bytes; first 32 used as
- *       pre-hashed message (BIP-340)
+ *       pre-hashed message (BIP 340)
  *     - PQC algorithms: raw message of any length
  * @param signature Pointer to signature structure to populate
  * @return BITCOIN_PQC_OK on success, error code otherwise
@@ -142,7 +146,7 @@ void bitcoin_pqc_signature_free(bitcoin_pqc_signature_t *signature);
  * @param message The message to verify
  * @param message_size Size of the message:
  *     - BITCOIN_PQC_SECP256K1_SCHNORR: must be >= 32 bytes; first 32 used as
- *       pre-hashed message (BIP-340)
+ *       pre-hashed message (BIP 340)
  *     - PQC algorithms: raw message of any length
  * @param signature The signature to verify
  * @param signature_size Size of the signature

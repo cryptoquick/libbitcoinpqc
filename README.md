@@ -1,19 +1,17 @@
 # libbitcoinpqc
 
-A C library for Post-Quantum Cryptographic (PQC) signature algorithms. This library implements two NIST PQC standard signature algorithms for use with [BIP-360](https://github.com/cryptoquick/bips/blob/p2qrh/bip-0360.mediawiki) and the Bitcoin QuBit soft fork:
+A C library for Post-Quantum Cryptographic (PQC) signature algorithms for Bitcoin. It implements two NIST-standardized PQC signature algorithms, plus BIP 340 Schnorr:
 
-1. **ML-DSA-44** (formerly CRYSTALS-Dilithium): A structured lattice-based digital signature scheme that is part of the NIST PQC standardization.
-2. **SLH-DSA-SHA2-128s** (formerly SPHINCS+): A stateless hash-based signature scheme with minimal security assumptions. Uses SHA-256, aligning with Bitcoin's native hash primitive.
+1. **ML-DSA-44** (FIPS 204, formerly CRYSTALS-Dilithium): a structured lattice-based digital signature scheme.
+2. **SLH-DSA-SHA2-128s** (FIPS 205, formerly SPHINCS+): a stateless hash-based signature scheme with minimal security assumptions. Uses SHA-256, aligning with Bitcoin's native hash primitive.
 
-Notice that all PQC signature algorithms used are certified according to the Federal Information Processing Standards, or FIPS. This should help in the future with native hardware support.
+Both PQC algorithms are FIPS-certified, which should help with future native hardware support.
 
-## Bitcoin QuBit Integration
-
-This library serves as the cryptographic foundation for the Bitcoin QuBit soft fork, which aims to make Bitcoin's signature verification quantum-resistant through the implementation of BIP-360. QuBit introduces new post-quantum secure transaction types that can protect Bitcoin from potential threats posed by quantum computers.
+Post-quantum signatures are a **separate effort** from [BIP 360](https://github.com/bitcoin/bips/blob/master/bip-0360.mediawiki) (**Pay-to-Merkle-Root** / **P2MR**). BIP 360 defines a consensus output type that removes Taproot's quantum-vulnerable key-path spend; it does not introduce PQC signature schemes. This library implements PQC (and BIP 340) signature primitives for applications and for possible future post-quantum signature proposals. It does not implement BIP 360 rules, addresses, or script validation.
 
 ## Features
 
-- Clean, unified C API for all three signature algorithms
+- Clean, unified C API for all three signature algorithms (secp256k1 Schnorr, ML-DSA-44, SLH-DSA-SHA2-128s)
 - User-provided entropy (bring your own randomness)
 - Key generation, signing, and verification functions
 - Minimal dependencies
@@ -22,7 +20,7 @@ This library serves as the cryptographic foundation for the Bitcoin QuBit soft f
 
 | Algorithm          | Public Key Size | Secret Key Size | Signature Size | Security Level |
 | ------------------ | --------------- | --------------- | -------------- | -------------- |
-| secp256k1          | 32 bytes        | 32 bytes        | 64 bytes       | Classical      |
+| secp256k1 Schnorr  | 32 bytes        | 32 bytes        | 64 bytes       | Classical      |
 | ML-DSA-44          | 1,312 bytes     | 2,560 bytes     | 2,420 bytes    | NIST Level 2   |
 | SLH-DSA-SHA2-128s  | 32 bytes        | 64 bytes        | 7,856 bytes    | NIST Level 1   |
 
@@ -64,13 +62,17 @@ requirement, motivated by:
 - **Headroom** — a future algorithm in the same API could require more entropy without
   a breaking change to the interface contract.
 
-## BIP-360 Compliance
+## Algorithms
 
-This library implements the cryptographic primitives required by [BIP-360](https://github.com/bitcoin/bips/blob/master/bip-0360.mediawiki), which defines the standard for post-quantum resistant signatures in Bitcoin. It supports all three recommended algorithms with the specified parameter sets.
+| Algorithm | Spec | Role |
+| --------- | ---- | ---- |
+| secp256k1 Schnorr | BIP 340 | Classical tapscript `OP_CHECKSIG`-style spends |
+| ML-DSA-44 | FIPS 204 | Lattice-based PQC signatures |
+| SLH-DSA-SHA2-128s | FIPS 205 | Hash-based PQC signatures (SHA-2) |
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
 
 ## Language Bindings
 
@@ -106,19 +108,46 @@ The enum wire value `BITCOIN_PQC_SLH_DSA_SHA2_128S = 2` is unchanged. Key and si
 
 ## Building the Library
 
-### Prerequisites
+### Nix (recommended)
 
-- CMake 3.10 or higher
+A flake provides a hermetic toolchain, pinned `libsecp256k1` (v0.7.1), and CI-equivalent checks. With [just](https://github.com/casey/just):
+
+```bash
+just                 # list recipes
+just test            # full gate (what CI runs): flake checks + ctest + cmake path
+just build           # nix build → ./result
+just hermetic        # flake checks only (offline-friendly once cached)
+just shell           # nix develop
+just cmake-test      # host CMake configure/build/ctest/smoke
+```
+
+`just test` runs:
+
+1. `nix flake check` — package build + ctest, alejandra fmt, naming scrub, install smoke, secp pin sync  
+2. `nix build` — install layout under `./result`  
+3. Worktree naming scrub  
+4. Host CMake build + ctest + link smoke (via `nix develop` if cmake is not on `PATH`)
+
+Equivalent raw Nix:
+
+```bash
+nix develop          # CMake, Ninja, just, clangd, etc.
+nix build            # build + install static/shared libs + headers
+nix flake check      # all flake checks (including ctest)
+```
+
+With [direnv](https://direnv.net/), `use flake` in `.envrc` loads the dev shell on `cd`.
+
+### Prerequisites (without Nix)
+
+- CMake 3.14 or higher
 - C99 compiler
 
 ### Building
 
 ```bash
-# Clone the Repository
 git clone https://github.com/cryptoquick/libbitcoinpqc.git
 cd libbitcoinpqc
-
-# Build the C Library
 chmod +x build.sh
 ./build.sh
 ```
@@ -130,12 +159,22 @@ This produces:
 
 ### Running Tests
 
+Tests are enabled by default (`BUILD_TESTS=ON`):
+
 ```bash
 cd build
-ctest
+ctest -V
 ```
 
-The `slh_dsa_sha2_api` test (enabled by default via `BUILD_TESTS=ON`) checks:
+Registered tests cover:
+
+| Test | Coverage |
+| ---- | -------- |
+| `secp256k1_schnorr_e2e` | BIP 340 golden vectors, sign/verify, arg rejection |
+| `ml_dsa_44_e2e` | Keygen, sign/verify, tamper rejection |
+| `slh_dsa_sha2_api` | Golden vectors, determinism, verify/reject paths, short entropy |
+
+The `slh_dsa_sha2_api` suite specifically checks:
 
 - Golden 32-byte public key and 7856-byte signature vectors
 - Signature determinism (two signs produce identical bytes)
@@ -144,7 +183,7 @@ The `slh_dsa_sha2_api` test (enabled by default via `BUILD_TESTS=ON`) checks:
 - Short signature rejection and short public-key rejection at verify
 - 127-byte entropy rejection at keygen
 
-Regenerate golden vectors after intentional crypto changes:
+Regenerate SLH-DSA golden vectors after intentional crypto changes:
 
 ```bash
 gcc -o /tmp/gen_slh_dsa_sha2_vectors scripts/gen_slh_dsa_sha2_vectors.c \
@@ -194,4 +233,3 @@ bitcoin_pqc_keypair_free(&keypair);
 
 - The original NIST PQC competition teams for their reference implementations
 - The NIST PQC standardization process for advancing post-quantum cryptography
-- The Bitcoin QuBit soft fork contributors and BIP-360 contributors

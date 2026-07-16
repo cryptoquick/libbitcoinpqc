@@ -1,7 +1,10 @@
 build/
+result
+result-*
 *.o
 benchmark_results.txt
 **.gcno
 **.lcov
 tags
 TAGS
+.direnv/
