@@ -9,7 +9,6 @@
 
 /* Include necessary headers from Dilithium reference implementation */
 #include "../../dilithium/ref/api.h"
-#include "../../dilithium/ref/randombytes.h"
 #include "../../dilithium/ref/params.h"
 #include "../../dilithium/ref/sign.h"
 
@@ -20,13 +19,6 @@
 #define DEBUG_PRINT(fmt, ...) \
     do { if (ML_DSA_DEBUG) printf(fmt, ##__VA_ARGS__); } while (0)
 
-/*
- * External declaration for the random data utilities
- * These are implemented in src/ml_dsa/utils.c
- */
-extern void ml_dsa_init_random_source(const uint8_t *random_data, size_t random_data_size);
-extern void ml_dsa_setup_custom_random(void);
-extern void ml_dsa_restore_original_random(void);
 extern void ml_dsa_derandomize(uint8_t *seed, const uint8_t *m, size_t mlen, const uint8_t *sk);
 
 int ml_dsa_44_sign(
@@ -43,16 +35,13 @@ int ml_dsa_44_sign(
 
     DEBUG_PRINT("ML-DSA sign: Starting to sign message of length %zu\n", mlen);
 
-    /* Create deterministic randomness from message and secret key */
+    /* Preserve the library's deterministic hedged-signing policy explicitly. */
     uint8_t deterministic_seed[64];
+    uint8_t rnd[RNDBYTES];
+    const uint8_t pre[2] = {0, 0};
     ml_dsa_derandomize(deterministic_seed, m, mlen, sk);
-    ml_dsa_init_random_source(deterministic_seed, sizeof(deterministic_seed));
-    ml_dsa_setup_custom_random();
+    memcpy(rnd, deterministic_seed, sizeof(rnd));
     DEBUG_PRINT("ML-DSA sign: Using deterministic signing\n");
-
-    /* Set up empty context */
-    uint8_t ctx[1] = {0};
-    size_t ctxlen = 0;
 
     /* Using fixed size buffer to avoid memory issues */
     uint8_t temp_sig[CRYPTO_BYTES + 1024]; /* Add some extra space for safety */
@@ -60,13 +49,19 @@ int ml_dsa_44_sign(
 
     DEBUG_PRINT("ML-DSA sign: Calling crypto_sign_signature with CRYPTO_BYTES = %d\n", CRYPTO_BYTES);
 
-    /* Call the reference implementation's signing function */
-    int result = crypto_sign_signature(temp_sig, &temp_siglen, m, mlen, ctx, ctxlen, sk);
+    /* Call the explicit-randomness reference entry point with an empty context. */
+    int result = crypto_sign_signature_internal(
+        temp_sig,
+        &temp_siglen,
+        m,
+        mlen,
+        pre,
+        sizeof(pre),
+        rnd,
+        sk
+    );
 
-    DEBUG_PRINT("ML-DSA sign: crypto_sign_signature returned %d, temp_siglen = %zu\n", result, temp_siglen);
-
-    /* Restore original random bytes function if we changed it */
-    ml_dsa_restore_original_random();
+    DEBUG_PRINT("ML-DSA sign: crypto_sign_signature_internal returned %d, temp_siglen = %zu\n", result, temp_siglen);
 
     /* Only copy the signature if it was successful */
     if (result == 0) {
