@@ -4,7 +4,6 @@
 #include "../../sphincsplus/ref/context.h"
 #include "../../sphincsplus/ref/sha2.h"
 #include "libbitcoinpqc/slh_dsa.h"
-#include "../randombytes_custom.h"
 
 /*
  * This file implements utility functions for SLH-DSA-SHA2-128s (SPHINCS+)
@@ -13,21 +12,6 @@
 
 typedef char slh_dsa_sk_whole_sha256_blocks[
     (CRYPTO_SECRETKEYBYTES % SPX_SHA256_BLOCK_BYTES) == 0 ? 1 : -1];
-
-/* Initialize the random data source */
-void slh_dsa_init_random_source(const uint8_t *random_data, size_t random_data_size) {
-    pqc_randombytes_init(random_data, random_data_size);
-}
-
-/* Setup custom random function - this is called before keygen/sign */
-void slh_dsa_setup_custom_random() {
-    /* Nothing to do here, as our randombytes function is already set up */
-}
-
-/* Restore original random function - this is called after keygen/sign */
-void slh_dsa_restore_original_random() {
-    pqc_randombytes_cleanup();
-}
 
 static void sha256_sk_m_domain(
     uint8_t *out,

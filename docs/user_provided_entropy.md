@@ -20,29 +20,41 @@ should come from:
 
 By accepting entropy as a parameter rather than sourcing it internally, the
 library avoids making assumptions about the caller's security requirements.
+The production library target does not read operating system entropy and does
+not provide a hidden fallback RNG.
 
 ## How the Library Consumes Entropy
 
+### secp256k1 Schnorr (BIP 340)
+
+`secp256k1_schnorr_keygen()` copies the first **32 bytes** of the caller's
+input directly into the secret key and rejects the value if it is not a valid
+secp256k1 scalar. Signing calls `secp256k1_schnorrsig_sign32()` with
+`aux_rand32 = NULL`, so libsecp256k1 uses its deterministic no-auxiliary-data
+path. Neither operation calls a library RNG.
+
 ### ML-DSA-44 (CRYSTALS-Dilithium)
 
-`ml_dsa_44_keygen()` passes your entropy buffer to the internal Dilithium
-reference implementation, which calls `randombytes(seedbuf, 32)` during key
-generation. This means **32 bytes** of your provided data are consumed to
-seed the key generation process. The seed is then expanded
-deterministically by Dilithium's internal key derivation.
+`ml_dsa_44_keygen()` passes the first **32 bytes** of your entropy buffer to
+the explicit `crypto_sign_seed_keypair()` entry point. The seed is expanded
+deterministically by ML-DSA's internal key derivation. No shared RNG state or
+`randombytes()` hook is involved.
 
 ### SLH-DSA-SHA2-128s (SPHINCS+)
 
 `slh_dsa_sha2_128s_keygen()` passes your entropy buffer directly to
 `crypto_sign_seed_keypair()`, which uses the first `3 * SPX_N` bytes as the
-seed. For SHA2-128s, `SPX_N = 16`, so **48 bytes** are consumed.
+seed. For SHA2-128s, `SPX_N = 16`, so **48 bytes** are consumed. No shared
+RNG state or `randombytes()` hook is involved.
 
 ### The 128-Byte Minimum
 
-Both keygen functions reject buffers smaller than 128 bytes. This minimum
+Both PQC keygen functions reject buffers smaller than 128 bytes. This minimum
 provides a comfortable margin above the actual consumption (32 or 48 bytes)
 and ensures callers provide a meaningful amount of entropy rather than a
-handful of bytes that might be poorly generated.
+handful of bytes that might be poorly generated. secp256k1 key generation has
+a separate 32-byte minimum because the input is used directly as its secret
+scalar.
 
 ### Key generation determinism
 
@@ -54,10 +66,13 @@ Providing identical entropy produces identical keys. This is by design:
 
 ### Signing determinism
 
-Signing does **not** accept caller-provided entropy. Both algorithms derive
-signing randomness deterministically from the message and secret key:
+Signing does **not** accept caller-provided entropy. Both algorithms use
+explicit deterministic inputs:
 
-**ML-DSA-44** uses SHAKE-256 over `sk ‖ m` (see `ml_dsa_derandomize()`).
+**ML-DSA-44** uses SHAKE-256 over `sk ‖ m` and passes the first 32 bytes of
+the derived value directly as the reference implementation's `rnd` input
+with an empty context. This preserves the library's deterministic
+hedged-signing policy without a `randombytes()` hook.
 
 **SLH-DSA-SHA2-128s** uses domain-separated SHA-256:
 
@@ -66,9 +81,9 @@ seed[0..31]  = SHA-256(sk ‖ m ‖ 0x00)
 seed[32..63] = SHA-256(sk ‖ m ‖ 0x01)
 ```
 
-That 64-byte seed is passed to the reference `randombytes()` hook before
-`crypto_sign_signature()`. The reference consumes 16 bytes as `optrand` for
-`gen_message_random()`.
+The first `SPX_N` bytes of that derived value are passed directly as
+`optrand` to `crypto_sign_signature_with_optrand()`. The reference
+implementation does not call `randombytes()`.
 
 This is a **libbitcoinpqc policy** for reproducible signatures. It is not a
 FIPS 205 pure/hedged mode selector — it layers deterministic signing on the
@@ -76,13 +91,33 @@ vendored reference implementation.
 
 Identical `(sk, m)` pairs therefore produce identical signatures.
 
-### Entropy cycling
+## RNG Isolation Audit
 
-If the library's internal `randombytes()` requests exceed the size of your
-buffer, the implementation wraps around to the beginning and reuses data.
-With the 128-byte minimum and actual consumption of 32-48 bytes, this does
-not occur during normal key generation. However, callers should be aware of
-this behavior if using the lower-level APIs directly.
+The CMake library targets define `LIBBITCOINPQC_EXPLICIT_ENTROPY`. In this
+mode:
+
+- ML-DSA key generation uses an explicit 32-byte seed entry point.
+- ML-DSA signing uses an explicit SHAKE-derived `rnd` input.
+- SLH-DSA key generation uses the existing explicit 48-byte seed entry point.
+- SLH-DSA signing uses an explicit caller-supplied `optrand` entry point.
+- secp256k1 key generation and signing use their explicit key and no-auxiliary-data inputs.
+- The unseeded vendored key generation and signing entry points are excluded
+  from the library build.
+- No `randombytes()` implementation is linked into `libbitcoinpqc`.
+
+The vendored source trees still contain their original `randombytes.c` and
+NIST KAT RNG files. Those files support the upstream standalone Makefiles and
+test-vector tools. They are not part of the `libbitcoinpqc` CMake targets and
+are not reachable through the installed public API.
+
+The `rng_isolation` regression test links a trap implementation of
+`randombytes()` and exercises all three public key generation, signing, and
+verification paths. The test fails if a public algorithm path calls the
+legacy hook.
+
+Callers that compile the vendored reference implementations independently are
+outside this library contract and must review the RNG selected by the
+corresponding upstream Makefile.
 
 ## Choosing an Entropy Source
 

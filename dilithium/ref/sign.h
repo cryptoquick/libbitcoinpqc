@@ -7,8 +7,14 @@
 #include "polyvec.h"
 #include "poly.h"
 
+#define crypto_sign_seed_keypair DILITHIUM_NAMESPACE(seed_keypair)
+int crypto_sign_seed_keypair(uint8_t *pk, uint8_t *sk,
+                             const uint8_t seed[SEEDBYTES]);
+
+#ifndef LIBBITCOINPQC_EXPLICIT_ENTROPY
 #define crypto_sign_keypair DILITHIUM_NAMESPACE(keypair)
 int crypto_sign_keypair(uint8_t *pk, uint8_t *sk);
+#endif
 
 #define crypto_sign_signature_internal DILITHIUM_NAMESPACE(signature_internal)
 int crypto_sign_signature_internal(uint8_t *sig,
@@ -20,6 +26,7 @@ int crypto_sign_signature_internal(uint8_t *sig,
                                    const uint8_t rnd[RNDBYTES],
                                    const uint8_t *sk);
 
+#ifndef LIBBITCOINPQC_EXPLICIT_ENTROPY
 #define crypto_sign_signature DILITHIUM_NAMESPACE(signature)
 int crypto_sign_signature(uint8_t *sig, size_t *siglen,
                           const uint8_t *m, size_t mlen,
@@ -31,6 +38,7 @@ int crypto_sign(uint8_t *sm, size_t *smlen,
                 const uint8_t *m, size_t mlen,
                 const uint8_t *ctx, size_t ctxlen,
                 const uint8_t *sk);
+#endif
 
 #define crypto_sign_verify_internal DILITHIUM_NAMESPACE(verify_internal)
 int crypto_sign_verify_internal(const uint8_t *sig,
