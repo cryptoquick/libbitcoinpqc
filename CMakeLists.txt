@@ -18,11 +18,6 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# Custom randombytes implementation
-set(CUSTOM_RANDOMBYTES
-    src/randombytes_custom.c
-)
-
 # ML-DSA-44 (Dilithium) source files
 set(ML_DSA_SOURCES
     dilithium/ref/sign.c
@@ -95,7 +90,6 @@ set(ALL_SOURCES
     ${BITCOINPQC_SOURCES}
     ${ML_DSA_SOURCES}
     ${SLH_DSA_SOURCES}
-    ${CUSTOM_RANDOMBYTES}
 )
 
 # Helper to apply common settings to a target
@@ -108,11 +102,12 @@ function(configure_target target)
         ${CMAKE_CURRENT_SOURCE_DIR}/sphincsplus/ref
     )
     target_link_libraries(${target} PUBLIC secp256k1 Threads::Threads)
-    # Set compile definitions for the target
+    # The production library receives all entropy through explicit API inputs.
+    # Exclude vendored entry points that source randomness through randombytes().
     target_compile_definitions(${target} PRIVATE
         DILITHIUM_MODE=2
         PARAMS=sphincs-sha2-128s
-        CUSTOM_RANDOMBYTES=1
+        LIBBITCOINPQC_EXPLICIT_ENTROPY=1
     )
 endfunction()
 
@@ -173,4 +168,11 @@ if(BUILD_TESTS)
         ${CMAKE_CURRENT_SOURCE_DIR}/include
     )
     add_test(NAME ml_dsa_44_e2e COMMAND ml_dsa_44_test)
+
+    add_executable(rng_isolation_test tests/rng_isolation_test.c)
+    target_link_libraries(rng_isolation_test PRIVATE bitcoinpqc)
+    target_include_directories(rng_isolation_test PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
+    add_test(NAME rng_isolation COMMAND rng_isolation_test)
 endif()

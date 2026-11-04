@@ -9,9 +9,12 @@
 #include "hash.h"
 #include "thash.h"
 #include "address.h"
-#include "randombytes.h"
 #include "utils.h"
 #include "merkle.h"
+
+#ifndef LIBBITCOINPQC_EXPLICIT_ENTROPY
+#include "randombytes.h"
+#endif
 
 /*
  * Returns the length of a secret key, in bytes
@@ -75,6 +78,7 @@ int crypto_sign_seed_keypair(unsigned char *pk, unsigned char *sk,
     return 0;
 }
 
+#ifndef LIBBITCOINPQC_EXPLICIT_ENTROPY
 /*
  * Generates an SPX key pair.
  * Format sk: [SK_SEED || SK_PRF || PUB_SEED || root]
@@ -88,19 +92,25 @@ int crypto_sign_keypair(unsigned char *pk, unsigned char *sk)
 
   return 0;
 }
+#endif
 
 /**
- * Returns an array containing a detached signature.
+ * Returns a detached signature using caller-provided optional randomness.
  */
-int crypto_sign_signature(uint8_t *sig, size_t *siglen,
-                          const uint8_t *m, size_t mlen, const uint8_t *sk)
+int crypto_sign_signature_with_optrand(
+    uint8_t *sig,
+    size_t *siglen,
+    const uint8_t *m,
+    size_t mlen,
+    const uint8_t optrand[SPX_N],
+    const uint8_t *sk
+)
 {
     spx_ctx ctx;
 
     const unsigned char *sk_prf = sk + SPX_N;
     const unsigned char *pk = sk + 2*SPX_N;
 
-    unsigned char optrand[SPX_N];
     unsigned char mhash[SPX_FORS_MSG_BYTES];
     unsigned char root[SPX_N];
     uint32_t i;
@@ -119,10 +129,6 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen,
     set_type(wots_addr, SPX_ADDR_TYPE_WOTS);
     set_type(tree_addr, SPX_ADDR_TYPE_HASHTREE);
 
-    /* Optionally, signing can be made non-deterministic using optrand.
-       This can help counter side-channel attacks that would benefit from
-       getting a large number of traces when the signer uses the same nodes. */
-    randombytes(optrand, SPX_N);
     /* Compute the digest randomization value. */
     gen_message_random(sig, sk_prf, optrand, m, mlen, &ctx);
 
@@ -156,6 +162,20 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen,
 
     return 0;
 }
+
+#ifndef LIBBITCOINPQC_EXPLICIT_ENTROPY
+/**
+ * Returns a detached signature using randombytes() for optional randomness.
+ */
+int crypto_sign_signature(uint8_t *sig, size_t *siglen,
+                          const uint8_t *m, size_t mlen, const uint8_t *sk)
+{
+    unsigned char optrand[SPX_N];
+
+    randombytes(optrand, sizeof(optrand));
+    return crypto_sign_signature_with_optrand(sig, siglen, m, mlen, optrand, sk);
+}
+#endif
 
 /**
  * Verifies a detached signature and message under a given public key.
@@ -240,6 +260,7 @@ int crypto_sign_verify(const uint8_t *sig, size_t siglen,
 }
 
 
+#ifndef LIBBITCOINPQC_EXPLICIT_ENTROPY
 /**
  * Returns an array containing the signature followed by the message.
  */
@@ -256,6 +277,7 @@ int crypto_sign(unsigned char *sm, unsigned long long *smlen,
 
     return 0;
 }
+#endif
 
 /**
  * Verifies a given signature-message pair under a given public key.

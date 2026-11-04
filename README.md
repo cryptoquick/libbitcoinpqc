@@ -27,34 +27,46 @@ Post-quantum signatures are a **separate effort** from [BIP 360](https://github.
 ## Security Notes
 
 - This library does not provide its own random number generation. It is essential that the user provide entropy from a cryptographically secure source.
+- The production library target does not read operating system entropy or link a `randombytes()` fallback. Seed and optional-randomness inputs are passed explicitly to the vendored reference implementations.
 - Random data is required for key generation, but not for signing. All signatures are deterministic from the message and secret key (see [docs/user_provided_entropy.md](docs/user_provided_entropy.md#signing-determinism)).
 - The implementations are based on reference code from the NIST PQC standardization process and are not production-hardened.
 - Care should be taken to securely manage secret keys in applications.
 
-## Entropy length requirement
+## Entropy length requirements
 
-The API requires a minimum of **128 bytes** of entropy for key generation, enforced uniformly
-across all algorithms regardless of their individual seed sizes:
+The API requires a minimum of **128 bytes** of entropy for PQC key generation.
+secp256k1 Schnorr key generation requires **32 bytes**:
 
 ```c
-if (!keypair || !random_data)       return BITCOIN_PQC_ERROR_BAD_ARG;
-if (random_data_size < 128)         return BITCOIN_PQC_ERROR_BAD_ARG;
+if (!keypair || !random_data)
+    return BITCOIN_PQC_ERROR_BAD_ARG;
+if (algorithm == BITCOIN_PQC_SECP256K1_SCHNORR) {
+    if (random_data_size < 32)
+        return BITCOIN_PQC_ERROR_BAD_ARG;
+} else if (random_data_size < 128) {
+    return BITCOIN_PQC_ERROR_BAD_ARG;
+}
 ```
 
 The actual entropy consumed by each algorithm is less than this minimum:
 
 | Algorithm          | Bytes consumed | Source in spec                                                                      |
 | ------------------ | -------------- | ----------------------------------------------------------------------------------- |
-| ML-DSA-44          | 32 bytes       | FIPS 204 — one `SEEDBYTES`-wide draw fed into SHAKE-256 expansion                   |
-| SLH-DSA-SHA2-128s  | 48 bytes       | FIPS 205 — three independent *n*-byte values (SK.seed ‖ SK.prf ‖ PK.seed), *n* = 16 |
+| secp256k1 Schnorr  | 32 bytes       | BIP 340 secret scalar supplied directly to libsecp256k1                              |
+| ML-DSA-44          | 32 bytes       | FIPS 204, one `SEEDBYTES`-wide explicit seed fed into SHAKE-256 expansion            |
+| SLH-DSA-SHA2-128s  | 48 bytes       | FIPS 205, three explicit *n*-byte values (SK.seed ‖ SK.prf ‖ PK.seed), *n* = 16      |
 
 Bytes beyond these amounts are accepted but **silently ignored** by the underlying
-reference implementations. A caller reading the 128-byte requirement should not infer
-that all 128 bytes contribute to key material — only the first 32 or 48 bytes (depending
-on algorithm) do.
+reference implementations. A caller reading the 128-byte PQC requirement should not
+infer that all 128 bytes contribute to key material. Only the first 32 or 48 bytes,
+depending on the algorithm, do.
 
-The 128-byte floor is a deliberate policy choice rather than a per-algorithm technical
-requirement, motivated by:
+The complete RNG inventory, including the vendored standalone test sources that are
+excluded from the production library, is documented in
+[docs/user_provided_entropy.md](docs/user_provided_entropy.md#rng-isolation-audit).
+
+The 128-byte PQC floor is a deliberate policy choice rather than a per-algorithm
+technical requirement, motivated by:
 
 - **Uniform API** — callers do not need to know per-algorithm seed sizes.
 - **Quality signal** — a caller that can supply 128 bytes from a secure source is less
@@ -173,6 +185,7 @@ Registered tests cover:
 | `secp256k1_schnorr_e2e` | BIP 340 golden vectors, sign/verify, arg rejection |
 | `ml_dsa_44_e2e` | Keygen, sign/verify, tamper rejection |
 | `slh_dsa_sha2_api` | Golden vectors, determinism, verify/reject paths, short entropy |
+| `rng_isolation` | Public PQC paths do not call the legacy `randombytes()` hook |
 
 The `slh_dsa_sha2_api` suite specifically checks:
 

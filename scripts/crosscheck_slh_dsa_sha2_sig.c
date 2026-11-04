@@ -4,10 +4,10 @@
  *
  * Build (from repo root):
  *   gcc -o /tmp/crosscheck_sig scripts/crosscheck_slh_dsa_sha2_sig.c \
- *       src/slh_dsa/utils.c src/randombytes_custom.c \
+ *       src/slh_dsa/utils.c \
  *       sphincsplus/ref/{address,merkle,wots,wotsx1,utils,utilsx1,fors,sign,sha2,hash_sha2,thash_sha2_simple}.c \
  *       -Isphincsplus/ref -Iinclude -Itests -DPARAMS=sphincs-sha2-128s \
- *       -DCUSTOM_RANDOMBYTES=1 -std=c99 -O2
+ *       -DLIBBITCOINPQC_EXPLICIT_ENTROPY=1 -std=c99 -O2
  */
 
 #include <stdio.h>
@@ -15,9 +15,6 @@
 #include "../../tests/vectors/slh_dsa_sha2_128s_vectors.h"
 #include "../../sphincsplus/ref/api.h"
 #include "libbitcoinpqc/slh_dsa.h"
-
-extern void slh_dsa_init_random_source(const uint8_t *random_data, size_t random_data_size);
-extern void slh_dsa_restore_original_random(void);
 
 int main(void) {
     unsigned char pk[CRYPTO_PUBLICKEYBYTES];
@@ -42,21 +39,17 @@ int main(void) {
         return 1;
     }
 
-    slh_dsa_init_random_source(deterministic_seed, sizeof(deterministic_seed));
-
-    if (crypto_sign_signature(
+    if (crypto_sign_signature_with_optrand(
             sig,
             &siglen,
             (const uint8_t *)SLH_DSA_SHA2_TEST_MESSAGE,
             message_len,
+            deterministic_seed,
             sk
         ) != 0) {
-        fprintf(stderr, "crypto_sign_signature failed\n");
-        slh_dsa_restore_original_random();
+        fprintf(stderr, "crypto_sign_signature_with_optrand failed\n");
         return 1;
     }
-
-    slh_dsa_restore_original_random();
 
     if (siglen != SLH_DSA_SHA2_EXPECTED_SIG_SIZE ||
         memcmp(sig, SLH_DSA_SHA2_EXPECTED_SIG, SLH_DSA_SHA2_EXPECTED_SIG_SIZE) != 0) {

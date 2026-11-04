@@ -12,8 +12,13 @@
 #define pqcrystals_dilithium2_ref_SECRETKEYBYTES pqcrystals_dilithium2_SECRETKEYBYTES
 #define pqcrystals_dilithium2_ref_BYTES pqcrystals_dilithium2_BYTES
 
+#ifndef LIBBITCOINPQC_EXPLICIT_ENTROPY
 int pqcrystals_dilithium2_ref_keypair(uint8_t *pk, uint8_t *sk);
+#endif
+int pqcrystals_dilithium2_ref_seed_keypair(uint8_t *pk, uint8_t *sk,
+                                           const uint8_t seed[32]);
 
+#ifndef LIBBITCOINPQC_EXPLICIT_ENTROPY
 int pqcrystals_dilithium2_ref_signature(uint8_t *sig, size_t *siglen,
                                         const uint8_t *m, size_t mlen,
                                         const uint8_t *ctx, size_t ctxlen,
@@ -23,6 +28,7 @@ int pqcrystals_dilithium2_ref(uint8_t *sm, size_t *smlen,
                               const uint8_t *m, size_t mlen,
                               const uint8_t *ctx, size_t ctxlen,
                               const uint8_t *sk);
+#endif
 
 int pqcrystals_dilithium2_ref_verify(const uint8_t *sig, size_t siglen,
                                      const uint8_t *m, size_t mlen,
@@ -42,8 +48,13 @@ int pqcrystals_dilithium2_ref_open(uint8_t *m, size_t *mlen,
 #define pqcrystals_dilithium3_ref_SECRETKEYBYTES pqcrystals_dilithium3_SECRETKEYBYTES
 #define pqcrystals_dilithium3_ref_BYTES pqcrystals_dilithium3_BYTES
 
+#ifndef LIBBITCOINPQC_EXPLICIT_ENTROPY
 int pqcrystals_dilithium3_ref_keypair(uint8_t *pk, uint8_t *sk);
+#endif
+int pqcrystals_dilithium3_ref_seed_keypair(uint8_t *pk, uint8_t *sk,
+                                           const uint8_t seed[32]);
 
+#ifndef LIBBITCOINPQC_EXPLICIT_ENTROPY
 int pqcrystals_dilithium3_ref_signature(uint8_t *sig, size_t *siglen,
                                         const uint8_t *m, size_t mlen,
                                         const uint8_t *ctx, size_t ctxlen,
@@ -53,6 +64,7 @@ int pqcrystals_dilithium3_ref(uint8_t *sm, size_t *smlen,
                               const uint8_t *m, size_t mlen,
                               const uint8_t *ctx, size_t ctxlen,
                               const uint8_t *sk);
+#endif
 
 int pqcrystals_dilithium3_ref_verify(const uint8_t *sig, size_t siglen,
                                      const uint8_t *m, size_t mlen,
@@ -72,8 +84,13 @@ int pqcrystals_dilithium3_ref_open(uint8_t *m, size_t *mlen,
 #define pqcrystals_dilithium5_ref_SECRETKEYBYTES pqcrystals_dilithium5_SECRETKEYBYTES
 #define pqcrystals_dilithium5_ref_BYTES pqcrystals_dilithium5_BYTES
 
+#ifndef LIBBITCOINPQC_EXPLICIT_ENTROPY
 int pqcrystals_dilithium5_ref_keypair(uint8_t *pk, uint8_t *sk);
+#endif
+int pqcrystals_dilithium5_ref_seed_keypair(uint8_t *pk, uint8_t *sk,
+                                           const uint8_t seed[32]);
 
+#ifndef LIBBITCOINPQC_EXPLICIT_ENTROPY
 int pqcrystals_dilithium5_ref_signature(uint8_t *sig, size_t *siglen,
                                         const uint8_t *m, size_t mlen,
                                         const uint8_t *ctx, size_t ctxlen,
@@ -83,6 +100,7 @@ int pqcrystals_dilithium5_ref(uint8_t *sm, size_t *smlen,
                               const uint8_t *m, size_t mlen,
                               const uint8_t *ctx, size_t ctxlen,
                               const uint8_t *sk);
+#endif
 
 int pqcrystals_dilithium5_ref_verify(const uint8_t *sig, size_t siglen,
                                      const uint8_t *m, size_t mlen,
