@@ -74,6 +74,8 @@ This is a **libbitcoinpqc policy** for reproducible signatures. It is not a
 FIPS 205 pure/hedged mode selector — it layers deterministic signing on the
 vendored reference implementation.
 
+The reference hashes `0x00 || 0x00 || message` on sign and verify. The SHA-256 domain bytes inside `slh_dsa_derandomize()` stay on the raw message.
+
 Identical `(sk, m)` pairs therefore produce identical signatures.
 
 ### Entropy cycling

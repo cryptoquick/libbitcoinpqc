@@ -89,6 +89,7 @@ set(BITCOINPQC_SOURCES
     src/slh_dsa/keygen.c
     src/slh_dsa/sign.c
     src/slh_dsa/verify.c
+    src/slh_dsa/external_message.c
 )
 
 set(ALL_SOURCES
@@ -159,6 +160,31 @@ if(BUILD_TESTS)
     )
 
     add_test(NAME slh_dsa_sha2_api COMMAND slh_dsa_sha2_test)
+
+    add_executable(slh_dsa_sha2_openssl tests/slh_dsa_sha2_openssl.c)
+    target_link_libraries(slh_dsa_sha2_openssl PRIVATE bitcoinpqc)
+    target_include_directories(slh_dsa_sha2_openssl PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests
+    )
+    add_test(NAME slh_dsa_sha2_openssl COMMAND slh_dsa_sha2_openssl)
+
+    add_executable(slh_dsa_sha2_acvp tests/slh_dsa_sha2_acvp.c)
+    target_link_libraries(slh_dsa_sha2_acvp PRIVATE bitcoinpqc)
+    target_include_directories(slh_dsa_sha2_acvp PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests
+    )
+    add_test(NAME slh_dsa_sha2_acvp COMMAND slh_dsa_sha2_acvp)
+
+    # The other group owns tests/ml_dsa_44_openssl.c.
+    add_executable(ml_dsa_44_openssl tests/ml_dsa_44_openssl.c)
+    target_link_libraries(ml_dsa_44_openssl PRIVATE bitcoinpqc)
+    target_include_directories(ml_dsa_44_openssl PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests
+    )
+    add_test(NAME ml_dsa_44_openssl COMMAND ml_dsa_44_openssl)
 
     add_executable(secp256k1_schnorr_test tests/secp256k1_schnorr_test.c)
     target_link_libraries(secp256k1_schnorr_test PRIVATE bitcoinpqc)
