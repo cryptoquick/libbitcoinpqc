@@ -182,6 +182,14 @@ if(BUILD_TESTS)
     )
     add_test(NAME ml_dsa_44_openssl COMMAND ml_dsa_44_openssl)
 
+    add_executable(ml_dsa_44_acvp tests/ml_dsa_44_acvp.c)
+    target_link_libraries(ml_dsa_44_acvp PRIVATE bitcoinpqc)
+    target_include_directories(ml_dsa_44_acvp PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests
+    )
+    add_test(NAME ml_dsa_44_acvp COMMAND ml_dsa_44_acvp)
+
     add_executable(secp256k1_schnorr_test tests/secp256k1_schnorr_test.c)
     target_link_libraries(secp256k1_schnorr_test PRIVATE bitcoinpqc)
     target_include_directories(secp256k1_schnorr_test PRIVATE
