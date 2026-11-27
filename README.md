@@ -5,7 +5,7 @@ A C library for Post-Quantum Cryptographic (PQC) signature algorithms for Bitcoi
 1. **ML-DSA-44** (FIPS 204, formerly CRYSTALS-Dilithium): a structured lattice-based digital signature scheme.
 2. **SLH-DSA-SHA2-128s** (FIPS 205, formerly SPHINCS+): a stateless hash-based signature scheme with minimal security assumptions. Uses SHA-256, aligning with Bitcoin's native hash primitive.
 
-Both PQC algorithms are FIPS-certified, which should help with future native hardware support.
+The algorithms are specified by FIPS 204 and FIPS 205.
 
 Post-quantum signatures are a **separate effort** from [BIP 360](https://github.com/bitcoin/bips/blob/master/bip-0360.mediawiki) (**Pay-to-Merkle-Root** / **P2MR**). BIP 360 defines a consensus output type that removes Taproot's quantum-vulnerable key-path spend; it does not introduce PQC signature schemes. This library implements PQC (and BIP 340) signature primitives for applications and for possible future post-quantum signature proposals. It does not implement BIP 360 rules, addresses, or script validation.
 
@@ -31,6 +31,8 @@ Post-quantum signatures are a **separate effort** from [BIP 360](https://github.
 - Random data is required for key generation, but not for signing. All signatures are deterministic from the message and secret key (see [docs/user_provided_entropy.md](docs/user_provided_entropy.md#signing-determinism)).
 - The implementations are based on reference code from the NIST PQC standardization process and are not production-hardened.
 - Care should be taken to securely manage secret keys in applications.
+
+See [SECURITY.md](SECURITY.md) for vulnerability reporting and for which revisions verify OpenSSL SLH-DSA signatures.
 
 ## Entropy length requirements
 
@@ -82,6 +84,8 @@ technical requirement, motivated by:
 | ML-DSA-44 | FIPS 204 | Lattice-based PQC signatures |
 | SLH-DSA-SHA2-128s | FIPS 205 | Hash-based PQC signatures (SHA-2) |
 
+SLH-DSA sign and verify implement pure mode with an empty context. Pre-hash and a caller context are not offered.
+
 ## License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
@@ -97,7 +101,9 @@ https://github.com/cryptoquick/libbitcoinpqc-bindings
 Cryptographic dependencies included in this project:
 
 - https://github.com/sphincs/sphincsplus - `7ec789ace6874d875f4bb84cb61b81155398167e`
-- https://github.com/pq-crystals/dilithium - `444cdcc84eb36b66fe27b3a2529ee48f6d8150c2`
+- https://github.com/pq-crystals/dilithium - `d35ba3fe5449bee3e6d43e1f296c3ca818bd36be`
+
+The sphincsplus pin is still `7ec789ace6874d875f4bb84cb61b81155398167e`. Upstream master 7ec789ace6874d875f4bb84cb61b81155398167e does not have the FIPS 205 FORS bit order. It still uses the SPHINCS+ 3.1 order `(offset & 0x7)` and `<< j`. This tree keeps `(~offset & 0x7)` and `<< (SPX_FORS_HEIGHT - 1 - j)` in `sphincsplus/ref/fors.c`. Without that one line, `slh_dsa_sha2_openssl` rejects a valid OpenSSL signature (`baseline valid signature: got -3 expected 0`) and exited 8.
 
 ## Migrating from SHAKE-128s
 
@@ -122,7 +128,7 @@ The enum wire value `BITCOIN_PQC_SLH_DSA_SHA2_128S = 2` is unchanged. Key and si
 
 ### Nix (recommended)
 
-A flake provides a hermetic toolchain, pinned `libsecp256k1` (v0.7.1), and CI-equivalent checks. With [just](https://github.com/casey/just):
+A flake provides a hermetic toolchain, pinned `libsecp256k1` (v0.8.0), and CI-equivalent checks. With [just](https://github.com/casey/just):
 
 ```bash
 just                 # list recipes
@@ -185,6 +191,9 @@ Registered tests cover:
 | `secp256k1_schnorr_e2e` | BIP 340 golden vectors, sign/verify, arg rejection |
 | `ml_dsa_44_e2e` | Keygen, sign/verify, tamper rejection |
 | `slh_dsa_sha2_api` | Golden vectors, determinism, verify/reject paths, short entropy |
+| `ml_dsa_44_openssl` | ML-DSA-44 verify vectors from an independent OpenSSL signer |
+| `slh_dsa_sha2_openssl` | SLH-DSA-SHA2-128s pure-mode verify vectors from an independent OpenSSL signer |
+| `slh_dsa_sha2_acvp` | Frozen NIST ACVP keyGen and external pure sigVer subset for SLH-DSA-SHA2-128s |
 | `rng_isolation` | Public PQC paths do not call the legacy `randombytes()` hook |
 
 The `slh_dsa_sha2_api` suite specifically checks:

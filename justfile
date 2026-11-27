@@ -2,7 +2,7 @@
 # Run `just` to list recipes.
 #
 # `just test` is the full verification gate (what CI runs): every flake check
-# (ctest, fmt, naming, install-smoke, pin-sync), install layout, worktree
+# (ctest, fmt, naming, install-smoke, pin-sync, slh-dsa-main-rejects-openssl), install layout, worktree
 # naming scrub, and the host CMake dual-path build+test+smoke.
 
 set shell := ["bash", "-euo", "pipefail", "-c"]
@@ -28,7 +28,7 @@ ci: test
 hermetic:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "=== nix flake check (ctest, fmt, naming, install-smoke, pin-sync) ==="
+    echo "=== nix flake check (ctest, fmt, naming, install-smoke, pin-sync, slh-dsa-main-rejects-openssl) ==="
     {{nix}} flake check -L
     echo "=== nix build (install layout → ./result) ==="
     {{nix}} build .#libbitcoinpqc -L

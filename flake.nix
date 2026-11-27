@@ -3,15 +3,23 @@
 
   inputs = {
     # Pin nixpkgs by rev for reproducible evaluation (bump intentionally).
-    nixpkgs.url = "github:NixOS/nixpkgs/18b9261cb3294b6d2a06d03f96872827b8fe2698";
+    nixpkgs.url = "github:NixOS/nixpkgs/56e7decacc105f24f928cfb8447535caf51a5400";
     flake-parts.url = "github:hercules-ci/flake-parts";
     systems.url = "github:nix-systems/default";
 
-    # Pin matches CMakeLists.txt FetchContent GIT_TAG (v0.7.1).
-    # Peeled commit for annotated tag v0.7.1; offline via FETCHCONTENT_SOURCE_DIR.
+    # Pin matches CMakeLists.txt FetchContent GIT_TAG (v0.8.0).
+    # Peeled commit for annotated tag v0.8.0; offline via FETCHCONTENT_SOURCE_DIR.
     secp256k1 = {
-      url = "git+https://github.com/bitcoin-core/secp256k1?rev=1a53f4961f337b4d166c25fce72ef0dc88806618";
+      url = "git+https://github.com/bitcoin-core/secp256k1?rev=6e2c8bc4ecdc6e71dbe7a368f360d8d453ce435d";
       flake = false;
+    };
+
+    repro = {
+      url = "path:./repro";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-parts.follows = "flake-parts";
+      inputs.systems.follows = "systems";
+      inputs.secp256k1.follows = "secp256k1";
     };
   };
 
@@ -32,6 +40,10 @@
         ...
       }: let
         inherit (pkgs) lib;
+
+        # flake-parts rejects `inputs` as a perSystem argument. This is the
+        # outputs `inputs @` binding. The OpenSSL rejection check is
+        # repro/repro.nix. The write-up is SECURITY.md.
 
         src = lib.cleanSourceWith {
           src = ./.;
@@ -92,7 +104,7 @@
             nativeBuildInputs = [pkgs.alejandra];
           } ''
             set -euo pipefail
-            alejandra --check ${src}/flake.nix
+            alejandra --check ${src}/flake.nix ${src}/repro/flake.nix ${src}/repro/repro.nix
             mkdir -p $out
             echo ok > $out/result
           '';
@@ -174,10 +186,10 @@
             inherit src;
           } ''
             set -euo pipefail
-            # CMake must pin v0.7.1 (or whatever flake documents).
-            rg -q 'GIT_TAG[[:space:]]+v0\.7\.1' "$src/CMakeLists.txt"
-            rg -q 'v0\.7\.1' "$src/flake.nix"
-            rg -q '1a53f4961f337b4d166c25fce72ef0dc88806618' "$src/flake.nix"
+            # CMake must pin v0.8.0 (or whatever flake documents).
+            rg -q 'GIT_TAG[[:space:]]+v0\.8\.0' "$src/CMakeLists.txt"
+            rg -q 'v0\.8\.0' "$src/flake.nix"
+            rg -q '6e2c8bc4ecdc6e71dbe7a368f360d8d453ce435d' "$src/flake.nix"
             mkdir -p $out
             echo ok > $out/result
           '';
@@ -194,6 +206,9 @@
           naming = naming-check;
           install-smoke = install-smoke;
           pin-sync = pin-sync-check;
+          # repro/repro.nix builds the pre-fix library. SECURITY.md records why
+          # the valid signatures print got -3 expected 0.
+          slh-dsa-main-rejects-openssl = inputs.repro.checks.${system}.slh-dsa-main-rejects-openssl;
         };
 
         devShells.default = pkgs.mkShell {

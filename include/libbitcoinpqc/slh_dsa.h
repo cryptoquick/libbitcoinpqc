@@ -35,8 +35,9 @@ int slh_dsa_sha2_128s_keygen(
 /**
  * @brief Sign a message using SLH-DSA-SHA2-128s
  *
- * Signing is deterministic: randomness is derived from (sk, m) via
- * slh_dsa_derandomize(). No external entropy is accepted.
+ * Pure mode, empty context. Deterministic optrand comes from the raw
+ * message via slh_dsa_derandomize(). No external entropy is accepted.
+ * Pre-hash and a caller context are not offered.
  *
  * @param sig Output signature (must have space for SLH_DSA_SHA2_128S_SIGNATURE_SIZE bytes)
  * @param siglen Output signature length

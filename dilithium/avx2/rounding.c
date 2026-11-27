@@ -184,6 +184,7 @@ void use_hint_avx(__m256i *b, const __m256i *a, const __m256i * restrict hint) {
     f = _mm256_load_si256(&a0[i]);
     g = _mm256_load_si256(&b[i]);
     h = _mm256_load_si256(&hint[i]);
+    f = _mm256_sub_epi32(f,h);
     t = _mm256_blendv_epi32(zero,h,f);
     t = _mm256_slli_epi32(t,1);
     h = _mm256_sub_epi32(h,t);
