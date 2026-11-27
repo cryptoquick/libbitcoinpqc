@@ -31,6 +31,8 @@ Post-quantum signatures are a **separate effort** from [BIP 360](https://github.
 - The implementations are based on reference code from the NIST PQC standardization process and are not production-hardened.
 - Care should be taken to securely manage secret keys in applications.
 
+See [SECURITY.md](SECURITY.md) for vulnerability reporting and for which revisions verify OpenSSL SLH-DSA signatures.
+
 ## Entropy length requirement
 
 The API requires a minimum of **128 bytes** of entropy for key generation, enforced uniformly

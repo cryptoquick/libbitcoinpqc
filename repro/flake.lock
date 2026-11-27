@@ -1,0 +1,139 @@
+{
+  "nodes": {
+    "flake-parts": {
+      "inputs": {
+        "nixpkgs-lib": "nixpkgs-lib"
+      },
+      "locked": {
+        "lastModified": 1793576659,
+        "narHash": "sha256-V1h85lUaJBQoHFrB2vpXZOE0Ju1MYSnIpsehoVZYlDo=",
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "rev": "ea2630b7470978622c7689a1ff75d2b389175399",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "type": "github"
+      }
+    },
+    "libbitcoinpqc-main": {
+      "inputs": {
+        "flake-parts": [
+          "flake-parts"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "secp256k1": [
+          "secp256k1"
+        ],
+        "systems": [
+          "systems"
+        ]
+      },
+      "locked": {
+        "lastModified": 1784173283,
+        "narHash": "sha256-iuRGAhvWv90TL8dzacyButMhOYLvAJtmonrDSkbG+nk=",
+        "owner": "cryptoquick",
+        "repo": "libbitcoinpqc",
+        "rev": "053e954534b13c1dbdc8ef4f9ae4d93bb301bab6",
+        "type": "github"
+      },
+      "original": {
+        "owner": "cryptoquick",
+        "repo": "libbitcoinpqc",
+        "rev": "053e954534b13c1dbdc8ef4f9ae4d93bb301bab6",
+        "type": "github"
+      }
+    },
+    "libbitcoinpqc-src": {
+      "flake": false,
+      "locked": {
+        "path": "..",
+        "type": "path"
+      },
+      "original": {
+        "path": "..",
+        "type": "path"
+      },
+      "parent": []
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1784007870,
+        "narHash": "sha256-djcLt/JJphyNt4eDY9XTly+/WbCK5lqWq9lSgCmJkkQ=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "18b9261cb3294b6d2a06d03f96872827b8fe2698",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "18b9261cb3294b6d2a06d03f96872827b8fe2698",
+        "type": "github"
+      }
+    },
+    "nixpkgs-lib": {
+      "locked": {
+        "lastModified": 1793504054,
+        "narHash": "sha256-ThkfL3D/FhCiZFc9+3BtxwuMmpuK+/bGtXCSo1+yVew=",
+        "owner": "nix-community",
+        "repo": "nixpkgs.lib",
+        "rev": "7851ba61fd862b277cb6a9cef37394bc18bb94e4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "nixpkgs.lib",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "flake-parts": "flake-parts",
+        "libbitcoinpqc-main": "libbitcoinpqc-main",
+        "libbitcoinpqc-src": "libbitcoinpqc-src",
+        "nixpkgs": "nixpkgs",
+        "secp256k1": "secp256k1",
+        "systems": "systems"
+      }
+    },
+    "secp256k1": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1769456498,
+        "narHash": "sha256-DnBgetf+98n7B1JGtyTdxyc+yQ51A3+ueTIPPSWCm4E=",
+        "ref": "HEAD",
+        "rev": "1a53f4961f337b4d166c25fce72ef0dc88806618",
+        "revCount": 2689,
+        "type": "git",
+        "url": "https://github.com/bitcoin-core/secp256k1"
+      },
+      "original": {
+        "rev": "1a53f4961f337b4d166c25fce72ef0dc88806618",
+        "type": "git",
+        "url": "https://github.com/bitcoin-core/secp256k1"
+      }
+    },
+    "systems": {
+      "locked": {
+        "lastModified": 1791244623,
+        "narHash": "sha256-uuanbkFk8a313Zfrxdcz8Us/yQtaxNnKJtX8v0ZPpd8=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "d36eeed142f88b5a636f2e3856a53c61654cf29b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}

@@ -13,6 +13,14 @@
       url = "git+https://github.com/bitcoin-core/secp256k1?rev=1a53f4961f337b4d166c25fce72ef0dc88806618";
       flake = false;
     };
+
+    repro = {
+      url = "path:./repro";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-parts.follows = "flake-parts";
+      inputs.systems.follows = "systems";
+      inputs.secp256k1.follows = "secp256k1";
+    };
   };
 
   outputs = inputs @ {
@@ -32,6 +40,10 @@
         ...
       }: let
         inherit (pkgs) lib;
+
+        # flake-parts rejects `inputs` as a perSystem argument. This is the
+        # outputs `inputs @` binding. The OpenSSL rejection check is
+        # repro/repro.nix. The write-up is SECURITY.md.
 
         src = lib.cleanSourceWith {
           src = ./.;
@@ -92,7 +104,7 @@
             nativeBuildInputs = [pkgs.alejandra];
           } ''
             set -euo pipefail
-            alejandra --check ${src}/flake.nix
+            alejandra --check ${src}/flake.nix ${src}/repro/flake.nix ${src}/repro/repro.nix
             mkdir -p $out
             echo ok > $out/result
           '';
@@ -194,6 +206,9 @@
           naming = naming-check;
           install-smoke = install-smoke;
           pin-sync = pin-sync-check;
+          # repro/repro.nix builds the pre-fix library. SECURITY.md records why
+          # the valid signatures print got -3 expected 0.
+          slh-dsa-main-rejects-openssl = inputs.repro.checks.${system}.slh-dsa-main-rejects-openssl;
         };
 
         devShells.default = pkgs.mkShell {

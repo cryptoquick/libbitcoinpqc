@@ -18,6 +18,54 @@
         "type": "github"
       }
     },
+    "libbitcoinpqc-main": {
+      "inputs": {
+        "flake-parts": [
+          "repro",
+          "flake-parts"
+        ],
+        "nixpkgs": [
+          "repro",
+          "nixpkgs"
+        ],
+        "secp256k1": [
+          "repro",
+          "secp256k1"
+        ],
+        "systems": [
+          "repro",
+          "systems"
+        ]
+      },
+      "locked": {
+        "lastModified": 1784173283,
+        "narHash": "sha256-iuRGAhvWv90TL8dzacyButMhOYLvAJtmonrDSkbG+nk=",
+        "owner": "cryptoquick",
+        "repo": "libbitcoinpqc",
+        "rev": "053e954534b13c1dbdc8ef4f9ae4d93bb301bab6",
+        "type": "github"
+      },
+      "original": {
+        "owner": "cryptoquick",
+        "repo": "libbitcoinpqc",
+        "rev": "053e954534b13c1dbdc8ef4f9ae4d93bb301bab6",
+        "type": "github"
+      }
+    },
+    "libbitcoinpqc-src": {
+      "flake": false,
+      "locked": {
+        "path": "..",
+        "type": "path"
+      },
+      "original": {
+        "path": "..",
+        "type": "path"
+      },
+      "parent": [
+        "repro"
+      ]
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1752447602,
@@ -49,10 +97,38 @@
         "type": "github"
       }
     },
+    "repro": {
+      "inputs": {
+        "flake-parts": [
+          "flake-parts"
+        ],
+        "libbitcoinpqc-main": "libbitcoinpqc-main",
+        "libbitcoinpqc-src": "libbitcoinpqc-src",
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "secp256k1": [
+          "secp256k1"
+        ],
+        "systems": [
+          "systems"
+        ]
+      },
+      "locked": {
+        "path": "./repro",
+        "type": "path"
+      },
+      "original": {
+        "path": "./repro",
+        "type": "path"
+      },
+      "parent": []
+    },
     "root": {
       "inputs": {
         "flake-parts": "flake-parts",
         "nixpkgs": "nixpkgs",
+        "repro": "repro",
         "secp256k1": "secp256k1",
         "systems": "systems"
       }
