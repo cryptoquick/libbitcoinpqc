@@ -28,7 +28,7 @@ nix build ./repro#checks.x86_64-linux.slh-dsa-main-rejects-openssl
 
 For each valid signature the driver prints got -3 expected 0. got -3 is BITCOIN_PQC_ERROR_BAD_SIGNATURE. expected 0 is BITCOIN_PQC_OK. Those two lines are the proof. A non-zero exit alone is not the proof.
 
-A FIPS 205 verifier and that pre-fix library do not accept each other's SLH-DSA signatures. The recorded failure is rejection of a valid signature, not acceptance of a forged one. ML-DSA-44 on the fixed tree matched all seven OpenSSL cases with no product change. Separate builds that drop only the prefix or only the FORS line were not run. The repro proves the pre-fix revision as a whole. The maintainer said on 2026-11-26 that the library is not deployed so far as they know.
+A FIPS 205 verifier and that pre-fix library do not accept each other's SLH-DSA signatures. The recorded failure is rejection of a valid signature, not acceptance of a forged one. ML-DSA-44 on the fixed tree matched all seven OpenSSL cases with no product change. Upstream master 7ec789ace6874d875f4bb84cb61b81155398167e does not have the FIPS 205 FORS order. A separate build that returned only that one index line to `(offset & 0x7)` and `<< j` was run. The shipped slh_dsa_sha2_openssl check rejected a valid OpenSSL signature (`baseline valid signature: got -3 expected 0`) and exited 8. That captured check is the evidence for keeping `(~offset & 0x7)` and `<< (SPX_FORS_HEIGHT - 1 - j)`. A separate build that drops only the prefix was not run. The repro proves the pre-fix revision as a whole. The maintainer said on 2026-11-26 that the library is not deployed so far as they know.
 
 ## Entropy and deterministic signatures
 

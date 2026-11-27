@@ -405,6 +405,8 @@ int crypto_sign_verify_internal(const uint8_t *sig, size_t siglen, const uint8_t
   /* Unpack z; shortness follows from unpacking */
   for(i = 0; i < L; i++) {
     polyz_unpack(&z.vec[i], sig + CTILDEBYTES + i*POLYZ_PACKEDBYTES);
+    if(poly_chknorm(&z.vec[i], GAMMA1 - BETA))
+      return -1;
     poly_ntt(&z.vec[i]);
   }
 

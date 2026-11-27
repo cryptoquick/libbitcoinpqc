@@ -3,14 +3,14 @@
 
   inputs = {
     # Pin nixpkgs by rev for reproducible evaluation (bump intentionally).
-    nixpkgs.url = "github:NixOS/nixpkgs/18b9261cb3294b6d2a06d03f96872827b8fe2698";
+    nixpkgs.url = "github:NixOS/nixpkgs/56e7decacc105f24f928cfb8447535caf51a5400";
     flake-parts.url = "github:hercules-ci/flake-parts";
     systems.url = "github:nix-systems/default";
 
-    # Pin matches CMakeLists.txt FetchContent GIT_TAG (v0.7.1).
-    # Peeled commit for annotated tag v0.7.1; offline via FETCHCONTENT_SOURCE_DIR.
+    # Pin matches CMakeLists.txt FetchContent GIT_TAG (v0.8.0).
+    # Peeled commit for annotated tag v0.8.0; offline via FETCHCONTENT_SOURCE_DIR.
     secp256k1 = {
-      url = "git+https://github.com/bitcoin-core/secp256k1?rev=1a53f4961f337b4d166c25fce72ef0dc88806618";
+      url = "git+https://github.com/bitcoin-core/secp256k1?rev=6e2c8bc4ecdc6e71dbe7a368f360d8d453ce435d";
       flake = false;
     };
 
@@ -186,10 +186,10 @@
             inherit src;
           } ''
             set -euo pipefail
-            # CMake must pin v0.7.1 (or whatever flake documents).
-            rg -q 'GIT_TAG[[:space:]]+v0\.7\.1' "$src/CMakeLists.txt"
-            rg -q 'v0\.7\.1' "$src/flake.nix"
-            rg -q '1a53f4961f337b4d166c25fce72ef0dc88806618' "$src/flake.nix"
+            # CMake must pin v0.8.0 (or whatever flake documents).
+            rg -q 'GIT_TAG[[:space:]]+v0\.8\.0' "$src/CMakeLists.txt"
+            rg -q 'v0\.8\.0' "$src/flake.nix"
+            rg -q '6e2c8bc4ecdc6e71dbe7a368f360d8d453ce435d' "$src/flake.nix"
             mkdir -p $out
             echo ok > $out/result
           '';

@@ -41,18 +41,34 @@ unsigned long long crypto_sign_seedbytes(void);
 int crypto_sign_seed_keypair(unsigned char *pk, unsigned char *sk,
                              const unsigned char *seed);
 
+#ifndef LIBBITCOINPQC_EXPLICIT_ENTROPY
 /*
  * Generates a SPHINCS+ key pair.
  * Format sk: [SK_SEED || SK_PRF || PUB_SEED || root]
  * Format pk: [root || PUB_SEED]
  */
 int crypto_sign_keypair(unsigned char *pk, unsigned char *sk);
+#endif
 
 /**
- * Returns an array containing a detached signature.
+ * Returns a detached signature using caller-provided optional randomness.
+ */
+int crypto_sign_signature_with_optrand(
+    uint8_t *sig,
+    size_t *siglen,
+    const uint8_t *m,
+    size_t mlen,
+    const uint8_t optrand[SPX_N],
+    const uint8_t *sk
+);
+
+#ifndef LIBBITCOINPQC_EXPLICIT_ENTROPY
+/**
+ * Returns an array containing a detached signature using randombytes().
  */
 int crypto_sign_signature(uint8_t *sig, size_t *siglen,
                           const uint8_t *m, size_t mlen, const uint8_t *sk);
+#endif
 
 /**
  * Verifies a detached signature and message under a given public key.
@@ -60,12 +76,14 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen,
 int crypto_sign_verify(const uint8_t *sig, size_t siglen,
                        const uint8_t *m, size_t mlen, const uint8_t *pk);
 
+#ifndef LIBBITCOINPQC_EXPLICIT_ENTROPY
 /**
  * Returns an array containing the signature followed by the message.
  */
 int crypto_sign(unsigned char *sm, unsigned long long *smlen,
                 const unsigned char *m, unsigned long long mlen,
                 const unsigned char *sk);
+#endif
 
 /**
  * Verifies a given signature-message pair under a given public key.

@@ -62,17 +62,17 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1784007870,
-        "narHash": "sha256-djcLt/JJphyNt4eDY9XTly+/WbCK5lqWq9lSgCmJkkQ=",
+        "lastModified": 1795775040,
+        "narHash": "sha256-mpQFurIPeuhVbeucm6LJuOTDAXPizKMskZX7mS7R+48=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "18b9261cb3294b6d2a06d03f96872827b8fe2698",
+        "rev": "56e7decacc105f24f928cfb8447535caf51a5400",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "18b9261cb3294b6d2a06d03f96872827b8fe2698",
+        "rev": "56e7decacc105f24f928cfb8447535caf51a5400",
         "type": "github"
       }
     },
@@ -104,16 +104,16 @@
     "secp256k1": {
       "flake": false,
       "locked": {
-        "lastModified": 1769456498,
-        "narHash": "sha256-DnBgetf+98n7B1JGtyTdxyc+yQ51A3+ueTIPPSWCm4E=",
+        "lastModified": 1785793887,
+        "narHash": "sha256-748wsQsZpbZPVVNBhCQW7xbsR8XkRu2Ikx6s/Dl1elg=",
         "ref": "HEAD",
-        "rev": "1a53f4961f337b4d166c25fce72ef0dc88806618",
-        "revCount": 2689,
+        "rev": "6e2c8bc4ecdc6e71dbe7a368f360d8d453ce435d",
+        "revCount": 2856,
         "type": "git",
         "url": "https://github.com/bitcoin-core/secp256k1"
       },
       "original": {
-        "rev": "1a53f4961f337b4d166c25fce72ef0dc88806618",
+        "rev": "6e2c8bc4ecdc6e71dbe7a368f360d8d453ce435d",
         "type": "git",
         "url": "https://github.com/bitcoin-core/secp256k1"
       }

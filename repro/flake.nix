@@ -5,13 +5,13 @@
   description = "Reproduce the SLH-DSA rejection of origin/main at 053e954";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/18b9261cb3294b6d2a06d03f96872827b8fe2698";
+    nixpkgs.url = "github:NixOS/nixpkgs/56e7decacc105f24f928cfb8447535caf51a5400";
     systems.url = "github:nix-systems/default";
     # Present so origin/main's nested flake can follow this input.
     flake-parts.url = "github:hercules-ci/flake-parts";
 
     secp256k1 = {
-      url = "git+https://github.com/bitcoin-core/secp256k1?rev=1a53f4961f337b4d166c25fce72ef0dc88806618";
+      url = "git+https://github.com/bitcoin-core/secp256k1?rev=6e2c8bc4ecdc6e71dbe7a368f360d8d453ce435d";
       flake = false;
     };
 

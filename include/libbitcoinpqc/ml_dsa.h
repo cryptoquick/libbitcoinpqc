@@ -73,7 +73,7 @@ int ml_dsa_44_verify(
 );
 
 /**
- * Generates deterministic randomness from a message and secret key
+ * Generates deterministic optional randomness from a message and secret key
  * @param seed Output buffer for the generated randomness (64 bytes)
  * @param m Message to sign
  * @param mlen Message length
